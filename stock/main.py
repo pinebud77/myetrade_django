@@ -5,6 +5,7 @@ from . import algorithms
 from .config import *
 from python_etrade.client import Client
 from .algorithms import AhnyungAlgorithm, FillAlgorithm
+from datetime import datetime
 
 from .models import *
 
@@ -86,7 +87,7 @@ def run():
         account = client.get_account(db_account.account_id)
         load_db_account(db_account, account)
 
-        buy_failed = False
+        trade_failed = False
 
         for db_stock in Stock.objects.filter(account=db_account):
             stock = account.get_stock(db_stock.symbol)
@@ -111,24 +112,38 @@ def run():
             if decision != 0:
                 stock.last_count = stock.count
 
+                trade = Trade()
+                trade.account_id = account.id
+                trade.symbol = stock.symbol
+                trade.date = datetime.now()
+                trade.price = stock.value
+
             if decision > 0:
-                if not stock.market_order(decision, order_id):
-                    buy_failed = True
+                if stock.market_order(decision, order_id):
+                    trade.type = 'buy'
+                else:
+                    trade.type = 'buy_fail'
+                    trade_failed = True
             elif decision < 0:
-                if not stock.market_order(decision, order_id):
-                    buy_failed = True
+                if stock.market_order(decision, order_id):
+                    trade.type = 'sell'
+                else:
+                    trade.type = 'sell_fail'
+                    trade_failed = True
+
 
             if decision != 0:
                 order_id += 1
+                trade.save()
 
-            if not buy_failed and account.mode == 'setup':
+            if not trade_failed and account.mode == 'setup':
                 stock.last_buy_price = stock.value
                 stock.last_sell_price = stock.value
                 stock.last_value = stock.value
 
             store_db_stock(db_stock, stock)
 
-        if not buy_failed and account.mode == 'setup':
+        if not trade_failed and account.mode == 'setup':
             account.mode = 'run'
 
         store_db_account(db_account, account)
