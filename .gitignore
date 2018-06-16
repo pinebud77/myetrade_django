@@ -1,0 +1,6 @@
+config.py
+myetrade.sqlite3
+.idea
+*~
+python_etrade
+__pycache__

@@ -1,0 +1,13 @@
+{% extends "base_stock.html" %}
+
+{% block title %}login page{% endblock %}
+
+{% block login_form %}
+    {% if user.is_authenticated %}
+        <a href="/stock/logout/">logout</a>
+    {% else %}
+        {{ block.super }}
+    {% endif %}
+{% endblock %}
+
+{% block post_entry %}please enter the credential{% endblock %}

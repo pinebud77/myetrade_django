@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Personal Stock Page{% endblock %}</title>
+</head>
+<body>
+{% block login_form %}
+            <h2>Login</h2>
+                <form id="loginform" method="post" action="/stock/login/">
+                    {% csrf_token %}
+                    <div>
+                        <span>username</span>
+                        <input name="username" type="text" class="textbox">
+                    </div>
+                    <div>
+                        <span>password</span>
+                        <input name="password" type="password" class="textbox">
+                    </div>
+                    <div>
+                        <input type="submit" value="Submit">
+                    </div>
+                </form>
+{% endblock %}
+
+{% block addition %}{% endblock %}
+
+<div class="container">
+    <div class="about">
+        <div class="about-top">
+<h3>{% block post_title %}About This Page{% endblock %}</h3>
+            <div class="top-about">
+                {% block post_entry %}This is personal stock test page..{% endblock %}
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
