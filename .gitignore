@@ -4,3 +4,4 @@ myetrade.sqlite3
 *~
 python_etrade
 __pycache__
+settings.py
