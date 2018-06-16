@@ -18,5 +18,6 @@ class AccountAdmin(admin.ModelAdmin):
     inlines = [StockInline]
 
 
+admin.site.register(QuoteName)
 admin.site.register(Account, AccountAdmin)
 admin.site.register(Trade, TradeAdmin)

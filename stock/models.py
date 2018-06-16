@@ -1,16 +1,33 @@
 from django.db import models
 
 
+class QuoteName(models.Model):
+    symbol = models.CharField(max_length=10, primary_key=True)
+
+    def __str__(self):
+        return str(self.symbol)
+
+
 class Quote(models.Model):
+    class Meta:
+        indexes = [models.Index(fields=['name', '-date',]),]
+
     id = models.AutoField(primary_key=True)
-    symbol = models.CharField(max_length=10)
+    name = models.ForeignKey(QuoteName, on_delete=models.CASCADE)
     date = models.DateTimeField('date of quote')
     price = models.FloatField('price of the symbol at the time')
 
 
+MODE_CHOICE = (
+    (0, 'setup'),
+    (1, 'run'),
+    (2, 'stop'),
+)
+
+
 class Account(models.Model):
     account_id = models.IntegerField(primary_key=True)
-    mode = models.CharField(max_length=10, default='setup', blank=True)
+    mode = models.IntegerField(default='setup', choices=MODE_CHOICE)
     net_value = models.FloatField(null=True, blank=True)
     cash_to_trade = models.FloatField(null=True, blank=True)
 
@@ -59,6 +76,9 @@ TRADE_CHOICE = (
 
 
 class Trade(models.Model):
+    class Meta:
+        indexes = [models.Index(fields=['account_id', 'symbol', '-date',]),]
+
     id = models.AutoField(primary_key=True)
     account_id = models.IntegerField()
     symbol = models.CharField(max_length=10)
