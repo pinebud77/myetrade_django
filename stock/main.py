@@ -193,6 +193,9 @@ def simulate():
     us_holidays = holidays.UnitedStates()
 
     while cur_dt < last_dt:
+        if cur_dt.weekday() == 5 or cur_dt.weekday() == 6:
+            cur_dt += day_delta
+            continue
         if cur_dt in us_holidays:
             cur_dt += day_delta
             continue
