@@ -17,11 +17,18 @@ class Quote(models.Model):
     date = models.DateTimeField('date of quote')
     price = models.FloatField('price of the symbol at the time')
 
+    def __str__(self):
+        return '%d/%d/%d: %s - %f' % (self.date.month, self.date.day, self.date.year, self.name.symbol, self.price)
+
+
+MODE_SETUP = 0
+MODE_RUN = 1
+MODE_STOP = 2
 
 MODE_CHOICE = (
-    (0, 'setup'),
-    (1, 'run'),
-    (2, 'stop'),
+    (MODE_SETUP, 'setup'),
+    (MODE_RUN, 'run'),
+    (MODE_STOP, 'stop'),
 )
 
 
@@ -38,16 +45,24 @@ class Account(models.Model):
             return '%d: %s = 0.0' % (self.account_id, self.mode)
 
 
+STANCE_CONSERVATIVE =0
+STANCE_MODERATE =1
+STANCE_AGGRESSIVE =2
+
 STANCE_CHOICE = (
-    (0, 'conservative'),
-    (1, 'moderate'),
-    (2, 'aggressive'),
+    (STANCE_CONSERVATIVE, 'conservative'),
+    (STANCE_MODERATE, 'moderate'),
+    (STANCE_AGGRESSIVE, 'aggressive'),
 )
 
+ALGORITHM_FILL = 0
+ALGORITHM_AHNYUNG = 1
+ALGORITHM_EMPTY = 2
+
 ALGORITHM_CHOICE = (
-    (0, 'fill'),
-    (1, 'ahnyung'),
-    (2, 'empty'),
+    (ALGORITHM_FILL, 'fill'),
+    (ALGORITHM_AHNYUNG, 'ahnyung'),
+    (ALGORITHM_EMPTY, 'empty'),
 )
 
 
@@ -67,11 +82,16 @@ class Stock(models.Model):
     last_buy_price = models.FloatField(null=True, blank=True)
 
 
+TRADE_BUY = 0
+TRADE_SELL = 1
+TRADE_BUY_FAIL = 2
+TRADE_SELL_FAIL = 3
+
 TRADE_CHOICE = (
-    (0, 'buy'),
-    (1, 'sell'),
-    (2, 'sell_fail'),
-    (3, 'sell_fail'),
+    (TRADE_BUY, 'buy'),
+    (TRADE_SELL, 'sell'),
+    (TRADE_BUY_FAIL, 'buy_fail'),
+    (TRADE_SELL_FAIL, 'sell_fail'),
 )
 
 

@@ -1,7 +1,10 @@
 config.py
 myetrade.sqlite3
+myetrade.sqlite3-journal
 .idea
 *~
 python_etrade
 __pycache__
-settings.py
+myetrade_django/settings.py
+log.txt
+

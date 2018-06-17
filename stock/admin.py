@@ -19,5 +19,7 @@ class AccountAdmin(admin.ModelAdmin):
 
 
 admin.site.register(QuoteName)
+admin.site.register(Quote)
+admin.site.register(Stock)
 admin.site.register(Account, AccountAdmin)
 admin.site.register(Trade, TradeAdmin)

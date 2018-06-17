@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sqlite3
+import logging
 
 
 CONSERVATIVE = 0
@@ -30,6 +30,8 @@ class AhnyungAlgorithm(TradeAlgorithm):
         if budget > stock.budget:
             budget = stock.budget
 
+        logging.debug('ahnyung: budget %f' % stock.budget)
+
         if not stock.count:
             decrease_rate = (stock.last_sell_price - stock.value) / stock.value
             if decrease_rate < ahnyung_variables[stock.stance]['buy_again']:
@@ -54,24 +56,12 @@ class FillAlgorithm(TradeAlgorithm):
         total_value = stock.get_total_value()
         overflow = total_value - stock.budget
 
+        logging.debug('fill: total_value - %f' % total_value)
+        logging.debug('fill: overflow - %f' % overflow)
+
         return -int(overflow / stock.value)
 
 
 class EmptyAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
         return -stock.count
-
-
-class UpDownAlgorithm(TradeAlgorithm):
-    def __init__(self, account=None):
-        super(UpDownAlgorithm, self).__init__()
-        self.account = account
-        self.conn = sqlite3.connect('updown_quotes.db')
-
-        self.ensure_table()
-
-    def ensure_table(self):
-        c = self.conn.cursor()
-        if not c.execute('''SELECT name FROM sqlite_master WHERE type='table' AND name='quotes';'''):
-            c.execute('''CREATE TABLE quotes (date text, symbol text, price real)''')
-            self.conn.commit()

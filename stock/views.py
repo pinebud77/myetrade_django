@@ -1,5 +1,6 @@
 import logging
 from . import main
+from . import load_history
 
 from django.contrib.auth import authenticate, login, logout
 from django.template import RequestContext, loader, Context
@@ -60,6 +61,15 @@ def logout_page(request):
     return redirect('/stock/')
 
 
+def load_data_page(request):
+    if not request.user.is_authenticated:
+        return redirect('/stock/')
+
+    load_history.load_data()
+
+    return render(request, 'stock/success.txt', {})
+
+
 @csrf_exempt
 def run_page(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -72,5 +82,14 @@ def run_page(request):
         return render(request, 'stock/error.txt', {})
 
     main.run()
+
+    return render(request, 'stock/success.txt', {})
+
+
+def simulate_page(request):
+    if not request.user.is_authenticated:
+        return redirect('/stock/')
+
+    main.simulate()
 
     return render(request, 'stock/success.txt', {})
