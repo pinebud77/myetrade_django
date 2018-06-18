@@ -119,25 +119,31 @@ def get_quotes(client, dt):
         db_quote.save()
 
 
-def run(dt=None):
+alg_ahnyung = AhnyungAlgorithm()
+alg_fill = FillAlgorithm()
+alg_trend = TrendAlgorithm(None)
+
+
+def run(dt=None, client=None):
     if dt is None:
+        dt = datetime.now()
+
+    need_logout = False
+    if client is None:
         client = etclient.Client()
         result = client.login(etrade_consumer_key,
                               etrade_consumer_secret,
                               etrade_username,
                               etrade_passwd)
-        dt = datetime.now()
+        if not result:
+            logging.error('login failed')
+            return\
+        logging.debug('logged in')
+        need_logout = True
     else:
-        client = simclient.Client()
-        result = client.login(dt)
-    if not result:
-        logging.error('login failed')
-        return
-    logging.debug('logged in')
+        client.current_time = dt
 
-    alg_ahnyung = AhnyungAlgorithm()
-    alg_fill = FillAlgorithm()
-    alg_trend = TrendAlgorithm(dt)
+    alg_trend.dt = dt
 
     get_quotes(client, dt)
 
@@ -179,7 +185,6 @@ def run(dt=None):
                 elif stock.algorithm_string == 'trend':
                     decision = alg_trend.trade_decision(stock)
 
-
             logging.debug('decision=%d' % decision)
 
             if decision != 0:
@@ -211,8 +216,9 @@ def run(dt=None):
     order_id_obj.order_id = order_id
     order_id_obj.save()
 
-    client.logout()
-    logging.debug('logged out')
+    if need_logout:
+        client.logout()
+        logging.debug('logged out')
 
 
 def simulate():
@@ -252,6 +258,8 @@ def simulate():
     day_delta = timedelta(1)
     us_holidays = holidays.UnitedStates()
 
+    client = simclient.Client()
+    client.login(cur_dt)
     while cur_dt < last_dt:
         if cur_dt.weekday() == 5 or cur_dt.weekday() == 6:
             cur_dt += day_delta
@@ -260,6 +268,8 @@ def simulate():
             cur_dt += day_delta
             continue
         print('running: ' + str(cur_dt))
-        run(cur_dt)
+        run(dt=cur_dt, client=client)
         cur_dt += day_delta
+
+    client.logout()
 
