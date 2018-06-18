@@ -3,7 +3,7 @@ from .models import *
 
 
 class TradeAdmin(admin.ModelAdmin):
-    fields = ['date', 'account_id', 'symbol', 'type', 'price']
+    fields = ['date', 'account_id', 'symbol', 'action', 'price']
     ordering = ('-date',)
 
 
@@ -18,8 +18,17 @@ class AccountAdmin(admin.ModelAdmin):
     inlines = [StockInline]
 
 
-admin.site.register(QuoteName)
+class SimQuoteAdmin(admin.ModelAdmin):
+    ordering = ('-date', 'symbol',)
+
+
+class DayReportAdmin(admin.ModelAdmin):
+    ordering = ('-date', 'account_id')
+
+
 admin.site.register(Quote)
+admin.site.register(SimQuote, SimQuoteAdmin)
 admin.site.register(Stock)
 admin.site.register(Account, AccountAdmin)
 admin.site.register(Trade, TradeAdmin)
+admin.site.register(DayReport, DayReportAdmin)

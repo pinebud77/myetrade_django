@@ -9,19 +9,21 @@ class Quote:
         self.ask = None
 
     def update(self, cur_time):
-        quote_name = models.QuoteName.objects.filter(symbol=self.symbol)[0]
-
         dt = datetime(year=cur_time.year,
                       month=cur_time.month,
                       day=cur_time.day,
                       hour=23,
                       minute=59,
                       second=59)
-        quote = models.Quote.objects.filter(name=quote_name, date__lt=dt).order_by('-date')[0]
+        try:
+            quote = models.SimQuote.objects.filter(symbol=self.symbol, date__lt=dt).order_by('-date')[0]
+        except IndexError:
+            return False
         self.ask = quote.price
 
         logging.debug('quote: %s' % self.symbol)
         logging.debug('price: %f' % self.ask)
+        return True
 
 
 class Stock:
@@ -37,15 +39,23 @@ class Stock:
         self.budget = 0.0
         self.algorithm_string = 'ahnyung'
         self.stance = 1
+        self.valid = True
 
     def update(self, dt):
         quote = Quote(self.symbol)
-        quote.update(dt)
+        res = quote.update(dt)
+        if not res:
+            self.valid = False
+            return False
         self.value = quote.ask
         logging.debug('stock: %s' % self.symbol)
         logging.debug('price: %f' % self.value)
 
+        return True
+
     def market_order(self, count, order_id):
+        if not self.valid:
+            return False
         if count < 0 and -count > self.count:
             logging.error('market_order: no enough stock count')
             return False
@@ -61,6 +71,8 @@ class Stock:
         return True
 
     def get_total_value(self):
+        if not self.valid:
+            return None
         if self.count is None:
             logging.error('get_total_value: count is None')
             return None

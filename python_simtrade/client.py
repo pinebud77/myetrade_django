@@ -80,7 +80,7 @@ class Client:
         return self.account_dict[id]
 
     def get_quote(self, symbol):
-        quote = Quote(symbol)
+        quote = SimQuote(symbol)
         quote.update(self.current_time)
 
         if quote.ask is None:

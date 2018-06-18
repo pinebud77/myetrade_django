@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import logging
-from . import algorithms
 from . import models
 from .config import *
 from .algorithms import AhnyungAlgorithm, FillAlgorithm
@@ -57,6 +56,39 @@ def store_db_stock(db_stock, stock):
     db_stock.save()
 
 
+def store_day_report(db_account, dt):
+    day_report = models.DayReport()
+    if not dt:
+        day_report.date = datetime.now()
+    else:
+        day_report.date = dt
+    day_report.account = db_account
+    day_report.net_value = db_account.net_value
+    day_report.cash_to_trade = db_account.cash_to_trade
+    day_report.save()
+
+
+def store_trade(stock, dt, decision, failed):
+    trade = models.Trade()
+
+    trade.date = dt
+    trade.symbol = stock.symbol
+    trade.account_id = stock.account.id
+    trade.count = abs(decision)
+    trade.price = stock.value
+
+    if decision > 0 and not failed:
+        trade.action = models.ACTION_BUY
+    elif decision > 0:
+        trade.action = models.ACTION_BUY_FAIL
+    elif decision < 0 and not failed:
+        trade.action = models.ACTION_SELL
+    else:
+        trade.action = models.ACTION_SELL_FAIL
+
+    trade.save()
+
+
 def run(dt=None):
     if dt is None:
         client = etclient.Client()
@@ -75,12 +107,12 @@ def run(dt=None):
     alg_ahnyung = AhnyungAlgorithm()
     alg_fill = FillAlgorithm()
 
-    order_ids = models.OrderIndex.objects.all()
+    order_ids = models.OrderID.objects.all()
     if not order_ids:
-        order_id_obj = models.OrderIndex()
+        order_id_obj = models.OrderID()
         order_id_obj.order_id = 200
         order_id_obj.save()
-        order_ids = models.OrderIndex.objects.all()
+        order_ids = models.OrderID.objects.all()
 
     order_id_obj = order_ids[0]
     order_id = order_id_obj.order_id
@@ -114,30 +146,15 @@ def run(dt=None):
             if decision != 0:
                 stock.last_count = stock.count
 
-                trade = models.Trade()
-                trade.account_id = account.id
-                trade.symbol = stock.symbol
-                if not dt:
-                    trade.date = datetime.now()
-                else:
-                    trade.date = dt
-                trade.price = stock.value
-
                 if decision > 0:
-                    if stock.market_order(decision, order_id):
-                        trade.type = models.TRADE_BUY
-                    else:
-                        trade.type = models.TRADE_BUY_FAIL
+                    if not stock.market_order(decision, order_id):
                         trade_failed = True
                 elif decision < 0:
-                    if stock.market_order(decision, order_id):
-                        trade.type = models.TRADE_SELL
-                    else:
-                        trade.type = models.TRADE_SELL_FAIL
+                    if not stock.market_order(decision, order_id):
                         trade_failed = True
 
                 order_id += 1
-                trade.save()
+                store_trade(stock, dt, decision, trade_failed)
 
             if not trade_failed and account.mode == 'setup':
                 stock.last_buy_price = stock.value
@@ -149,8 +166,8 @@ def run(dt=None):
         if not trade_failed and account.mode == 'setup':
             account.mode = 'run'
         account.update()
-
         store_db_account(db_account, account)
+        store_day_report(db_account, dt)
 
     order_id_obj.order_id = order_id
     order_id_obj.save()
@@ -160,9 +177,11 @@ def run(dt=None):
 
 
 def simulate():
-    logging.basicConfig(level=logging.DEBUG)
+    #logging.basicConfig(level=logging.DEBUG)
 
     models.Trade.objects.all().delete()
+    models.Quote.objects.all().delete()
+    models.DayReport.objects.all().delete()
 
     for db_account in models.Account.objects.all():
         db_account.mode = models.MODE_SETUP
@@ -172,8 +191,8 @@ def simulate():
             db_stock.count = 0
             db_stock.save()
 
-    first_quote = models.Quote.objects.all().order_by('date')[0]
-    last_quote = models.Quote.objects.all().order_by('-date')[0]
+    first_quote = models.SimQuote.objects.all().order_by('date')[0]
+    last_quote = models.SimQuote.objects.all().order_by('-date')[0]
 
     cur_dt = datetime(year=first_quote.date.year,
                       month=first_quote.date.month,

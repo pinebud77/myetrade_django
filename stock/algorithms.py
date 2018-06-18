@@ -54,6 +54,8 @@ class AhnyungAlgorithm(TradeAlgorithm):
 class FillAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
         total_value = stock.get_total_value()
+        if total_value is None:
+            return 0
         overflow = total_value - stock.budget
 
         logging.debug('fill: total_value - %f' % total_value)
@@ -64,4 +66,8 @@ class FillAlgorithm(TradeAlgorithm):
 
 class EmptyAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
+        total_value = stock.get_total_value()
+        if total_value is None:
+            return 0
+
         return -stock.count

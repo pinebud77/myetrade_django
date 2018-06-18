@@ -2,15 +2,23 @@
   "accounts": [
     {
       "id": 38348704,
-      "cash_to_trade": 108347.54860000011,
-      "net_value": 212444.6494000001,
+      "cash_to_trade": 194909.35820000008,
+      "net_value": 194909.35820000008,
       "stocks": [
         {
           "symbol": "AAPL",
-          "count": 58272
+          "count": 0
         },
         {
           "symbol": "MSFT",
+          "count": 0
+        },
+        {
+          "symbol": "GOOGL",
+          "count": 0
+        },
+        {
+          "symbol": "AMZN",
           "count": 0
         }
       ]

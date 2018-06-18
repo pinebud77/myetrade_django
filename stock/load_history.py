@@ -4,12 +4,13 @@
 import csv
 from os import listdir
 from os.path import isfile, join, splitext, realpath, dirname
-from .models import QuoteName, Quote
+from .models import SimQuote
 from datetime import datetime
 from django.db import transaction
 
 
 DATA_PATH = dirname(realpath(__file__)) + '/market_history'
+
 
 def get_symbol_list():
     result = []
@@ -21,18 +22,16 @@ def get_symbol_list():
 
 
 @transaction.atomic
-def load_csv(quote_name):
-    Quote.objects.all().delete()
-
-    csv_file = open(join(DATA_PATH, quote_name.symbol + '.csv'))
+def load_csv(symbol):
+    csv_file = open(join(DATA_PATH, symbol + '.csv'))
     reader = csv.reader(csv_file)
 
     for row in reader:
         if row[0] == 'Date':
             continue
         else:
-            quote = Quote()
-            quote.name = quote_name
+            quote = SimQuote()
+            quote.symbol = symbol
 
             dates = row[0].split('/')
             quote.date = datetime(year=int(dates[2])+2000, month=int(dates[0]), day=int(dates[1]))
@@ -44,13 +43,9 @@ def load_csv(quote_name):
 
 
 def load_data():
+    SimQuote.objects.all().delete()
+
     symbols = get_symbol_list()
 
     for symbol in symbols:
-        quote_name = QuoteName.objects.filter(symbol=symbol)[0]
-        if not quote_name:
-            quote_name = QuoteName()
-            quote_name.symbol = symbol
-            quote_name.save()
-
-        load_csv(quote_name)
+        load_csv(symbol)

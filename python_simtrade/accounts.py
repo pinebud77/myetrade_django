@@ -14,7 +14,9 @@ class Account:
     def update(self):
         self.net_value = self.cash_to_trade
         for stock in self.stock_list:
-            stock.update(self.dt)
+            res = stock.update(self.dt)
+            if not res:
+                continue
             self.net_value += stock.value * stock.count
         logging.debug('Account: %d' % self.id)
         logging.debug('Net value: %f' % self.net_value)
