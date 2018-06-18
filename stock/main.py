@@ -59,7 +59,7 @@ def store_db_stock(db_stock, stock):
 
 def store_day_report(db_account, dt):
     try:
-        prev_report = models.DayReport().objects.filter(account=db_account, dt__lt=dt).order_by('-date')[0]
+        prev_report = models.DayReport.objects.filter(account=db_account, dt__lt=dt).order_by('-date')[0]
         if prev_report.date.year == dt.year and prev_report.date.month == dt.month and prev_report.date.day == dt.day:
             prev_report.delete()
     except IndexError:
