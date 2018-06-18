@@ -5,6 +5,7 @@ This is personal test for Django + my trading code.
 
 ToDO :
 * overall code refinement and bug fix
+* bug fix : account value changes before stock price -_-;
 * show the buy/sell log
 * record the trend of the specific stocks
 

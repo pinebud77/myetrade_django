@@ -10,9 +10,8 @@ from django.shortcuts import render_to_response, redirect
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from datetime import datetime
+from datetime import datetime, date
 from os.path import realpath, dirname, join, basename
-
 
 
 CUR_DIR = dirname(realpath(__file__))
@@ -71,10 +70,8 @@ def reportrange_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
     if not request.user.is_authenticated:
         return redirect('/stock/')
 
-    start_dt = datetime(year=int(s_year), month=int(s_month), day=int(s_day),
-                        hour=0, minute=0, second=0)
-    end_dt = datetime(year=int(e_year), month=int(e_month), day=int(e_day),
-                        hour=23, minute=59, second=59)
+    start_dt = date(year=int(s_year), month=int(s_month), day=int(s_day))
+    end_dt = date(year=int(e_year), month=int(e_month), day=int(e_day))
 
     report_list = []
 
@@ -90,7 +87,7 @@ def reportrange_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
 
     prev_line = (0.0, ) * (1 + len(account_id_list) + len(symbol_list))
     base_values = [0.0, ] * (len(account_id_list) + len(symbol_list))
-    for day_report in DayReport.objects.filter(date__gt=start_dt, date__lt=end_dt).order_by('date'):
+    for day_report in DayReport.objects.filter(date__gte=start_dt, date__lte=end_dt).order_by('date'):
         line = list()
         line.append('%d/%d/%d' % (day_report.date.month, day_report.date.day, day_report.date.year))
         col = 1
@@ -107,15 +104,12 @@ def reportrange_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
                 line.append(0.0)
             col += 1
         for symbol in symbol_list:
+            quote_date = date(year=day_report.date.year, month=day_report.date.month, day=day_report.date.day)
             try:
-                quote = Quote.objects.filter(symbol=symbol, date__lt=day_report.date).order_by('-date')[0]
+                quote = Quote.objects.filter(symbol=symbol, date__lte=quote_date).order_by('-date')[0]
                 val = float(quote.price)
             except IndexError:
-                try:
-                    quote = SimQuote.objects.filter(symbol=symbol, date__lt=day_report.date).order_by('-date')[0]
-                    val = float(quote.price)
-                except IndexError:
-                    val = prev_line[col]
+                val = prev_line[col]
             if base_values[col - 1] == 0.0 and val != 0.0:
                 base_values[col - 1] = val
             if base_values[col - 1]:

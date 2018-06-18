@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 import stock.models as models
 import logging
 
@@ -12,14 +12,9 @@ class Quote:
         self.ask = None
 
     def update(self, cur_time):
-        dt = datetime(year=cur_time.year,
-                      month=cur_time.month,
-                      day=cur_time.day,
-                      hour=23,
-                      minute=59,
-                      second=59)
+        dt = date(year=cur_time.year, month=cur_time.month, day=cur_time.day)
         try:
-            quote = models.SimQuote.objects.filter(symbol=self.symbol, date__lt=dt).order_by('-date')[0]
+            quote = models.SimQuote.objects.filter(symbol=self.symbol, date__lte=dt).order_by('-date')[0]
         except IndexError:
             return False
         self.ask = quote.price

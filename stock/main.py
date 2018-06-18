@@ -104,11 +104,9 @@ def get_quotes(client, dt):
         if quote is None:
             continue
         try:
-            prev_quote = models.Quote.objects.filter(symbol=symbol, date__lt=dt).order_by('-date')[0]
-            day_start = datetime(year=dt.year, month=dt.month, day=dt.day,
-                                 hour=0, minute=0, second=0)
-            if day_start < prev_quote.date:
-                continue
+            prev_quote = models.Quote.objects.filter(symbol=symbol, date__lte=dt).order_by('-date')[0]
+            if prev_quote.date.year == dt.year and prev_quote.date.month == dt.month and prev_quote.date.day == dt.day:
+                prev_quote.delete()
         except IndexError:
             pass
 

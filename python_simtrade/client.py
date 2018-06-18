@@ -3,7 +3,6 @@ import logging
 from .accounts import Account
 from .stocks import Stock, Quote
 from os.path import dirname, realpath
-from datetime import datetime
 
 
 SIM_CONFIG_FILE = dirname(realpath(__file__)) + '/sim_config.json'

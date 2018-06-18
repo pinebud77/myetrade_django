@@ -22,7 +22,7 @@ class TradeAlgorithm:
 trend_variables = [
     {'up_count': 3, 'down_count': 4, 'pause_count': 7},  # conservative
     {'up_count': 2, 'down_count': 3, 'pause_count': 6},  # moderate
-    {'up_count': 2, 'down_count': 2, 'pause_count': 5},  # aggressive
+    {'up_count': 1, 'down_count': 2, 'pause_count': 5},  # aggressive
 ]
 MIN_HISTORY = 10
 
@@ -42,7 +42,7 @@ class TrendAlgorithm(TradeAlgorithm):
         down_count = trend_variables[stock.stance]['down_count']
         pause_count = trend_variables[stock.stance]['pause_count']
 
-        quotes = models.Quote.objects.filter(symbol=stock.symbol, date__lt=self.dt).order_by('-date')[:MIN_HISTORY]
+        quotes = models.Quote.objects.filter(symbol=stock.symbol, date__lte=self.dt).order_by('-date')[:MIN_HISTORY]
         if len(quotes) < MIN_HISTORY:
             return 0
 

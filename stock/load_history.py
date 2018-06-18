@@ -34,7 +34,8 @@ def load_csv(symbol):
             quote.symbol = symbol
 
             dates = row[0].split('/')
-            quote.date = datetime(year=int(dates[2])+2000, month=int(dates[0]), day=int(dates[1]))
+            quote.date = datetime(year=int(dates[2])+2000, month=int(dates[0]), day=int(dates[1]),
+                                  hour=0, minute=0, second=0)
             quote.price = float(row[1])
 
             quote.save()
