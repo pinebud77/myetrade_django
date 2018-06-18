@@ -137,11 +137,9 @@ def run(dt=None, client=None):
                               etrade_passwd)
         if not result:
             logging.error('login failed')
-            return\
+            return
         logging.debug('logged in')
         need_logout = True
-    else:
-        client.current_time = dt
 
     alg_trend.dt = dt
 
@@ -268,6 +266,7 @@ def simulate():
             cur_dt += day_delta
             continue
         print('running: ' + str(cur_dt))
+        client.update(cur_dt)
         run(dt=cur_dt, client=client)
         cur_dt += day_delta
 

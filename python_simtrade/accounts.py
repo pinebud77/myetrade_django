@@ -11,7 +11,10 @@ class Account:
         self.mode = 'setup'
         self.dt = dt
 
-    def update(self):
+    def update(self, dt=None):
+        if dt:
+            self.dt = dt
+
         self.net_value = self.cash_to_trade
         for stock in self.stock_list:
             res = stock.update(self.dt)

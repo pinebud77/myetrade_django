@@ -34,12 +34,7 @@ class Client:
             with open(SIM_CONFIG_FILE, 'w') as outfile:
                 json.dump(self.config, outfile, indent=2, sort_keys=False)
 
-        self.current_time = datetime(year=dt.year,
-                                     month=dt.month,
-                                     day=dt.day,
-                                     hour=8,
-                                     minute=0,
-                                     second=0)
+        self.current_time = dt
 
         for json_account in self.config['accounts']:
             account = Account(json_account['id'], self.current_time)
@@ -56,6 +51,12 @@ class Client:
                 account.stock_list.append(stock)
             account.update()
         return True
+
+    def update(self, dt):
+        self.current_time = dt
+        for account_id in self.account_dict:
+            account = self.account_dict[account_id]
+            account.update(dt)
 
     def renew_connection(self):
         return True
