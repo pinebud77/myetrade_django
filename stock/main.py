@@ -59,10 +59,7 @@ def store_db_stock(db_stock, stock):
 
 def store_day_report(db_account, dt):
     day_report = models.DayReport()
-    if not dt:
-        day_report.date = datetime.now()
-    else:
-        day_report.date = dt
+    day_report.date = dt
     day_report.account = db_account
     day_report.net_value = db_account.net_value
     day_report.cash_to_trade = db_account.cash_to_trade
@@ -90,20 +87,19 @@ def store_trade(stock, dt, decision, failed):
     trade.save()
 
 
-def get_quotes(client):
+def get_quotes(client, dt):
     symbol_list = []
     for stock in models.Stock.objects.all():
         if str(stock.symbol) not in symbol_list:
             symbol_list.append(str(stock.symbol))
 
     for symbol in symbol_list:
-        cur_dt = client.current_time
         quote = client.get_quote(symbol)
         if quote is None:
             continue
         try:
-            prev_quote = models.Quote.objects.filter(symbol=symbol, date__lt=cur_dt).order_by('-date')[0]
-            day_start = datetime(year=cur_dt.year, month=cur_dt.month, day=cur_dt.day,
+            prev_quote = models.Quote.objects.filter(symbol=symbol, date__lt=dt).order_by('-date')[0]
+            day_start = datetime(year=dt.year, month=dt.month, day=dt.day,
                                  hour=0, minute=0, second=0)
             if day_start < prev_quote.date:
                 continue
@@ -111,7 +107,7 @@ def get_quotes(client):
             pass
 
         db_quote = models.Quote()
-        db_quote.date = cur_dt
+        db_quote.date = dt
         db_quote.symbol = symbol
         db_quote.price = quote.ask
         db_quote.save()
@@ -124,6 +120,7 @@ def run(dt=None):
                               etrade_consumer_secret,
                               etrade_username,
                               etrade_passwd)
+        dt = datetime.now()
     else:
         client = simclient.Client()
         result = client.login(dt)
@@ -136,7 +133,7 @@ def run(dt=None):
     alg_fill = FillAlgorithm()
     alg_trend = TrendAlgorithm(dt)
 
-    get_quotes(client)
+    get_quotes(client, dt)
 
     order_ids = models.OrderID.objects.all()
     if not order_ids:
