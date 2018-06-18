@@ -11,7 +11,7 @@ SIM_CONFIG_FILE = dirname(realpath(__file__)) + '/sim_config.json'
 
 def reset_sim_config():
     config = dict()
-    config['accounts'] = [{'id': 38348704, 'cash_to_trade': 100000.0, 'stocks':[]}]
+    config['accounts'] = [{'id': 0, 'cash_to_trade': 100000.0, 'stocks':[]}]
 
     with open(SIM_CONFIG_FILE, 'w') as outfile:
         json.dump(config, outfile, indent=2, sort_keys=False)
