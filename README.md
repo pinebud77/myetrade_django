@@ -4,6 +4,7 @@ Django-based MyEtrade
 This is personal test for Django + my trading code.
 
 ToDO :
+* overall code refinement and bug fix
 * show the buy/sell log
 * record the trend of the specific stocks
 

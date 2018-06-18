@@ -20,9 +20,9 @@ class TradeAlgorithm:
 
 
 trend_variables = [
-    {'up_count': 3, 'down_count': 2, 'pause_count': 7},
-    {'up_count': 2, 'down_count': 3, 'pause_count': 6},
-    {'up_count': 1, 'down_count': 4, 'pause_count': 5},
+    {'up_count': 3, 'down_count': 4, 'pause_count': 7},  # conservative
+    {'up_count': 2, 'down_count': 3, 'pause_count': 6},  # moderate
+    {'up_count': 2, 'down_count': 2, 'pause_count': 5},  # aggressive
 ]
 MIN_HISTORY = 10
 
