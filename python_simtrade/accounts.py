@@ -23,6 +23,8 @@ class Account:
         logging.debug('cash to trade: %f' % self.cash_to_trade)
         logging.debug('Stocks: ' + str(self.stock_list))
 
+        return True
+
     def get_stock(self, symbol):
         for stock in self.stock_list:
             if stock.symbol == symbol:
@@ -32,7 +34,8 @@ class Account:
 
     def new_stock(self, symbol):
         stock = stocks.Stock(symbol, self)
-        stock.update(self.dt)
+        if not stock.update(self.dt):
+            return None
         stock.count = 0
         self.stock_list.append(stock)
 

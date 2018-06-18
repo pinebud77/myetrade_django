@@ -6,5 +6,5 @@ myetrade.sqlite3-journal
 python_etrade
 __pycache__
 myetrade_django/settings.py
-log.txt
-
+stock/trend_alg_config.pickle
+python_simtrade/sim_config.json

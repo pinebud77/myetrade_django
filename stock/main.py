@@ -3,8 +3,9 @@
 import logging
 from . import models
 from .config import *
-from .algorithms import AhnyungAlgorithm, FillAlgorithm
+from .algorithms import AhnyungAlgorithm, FillAlgorithm, TrendAlgorithm
 from datetime import datetime, timedelta
+from python_simtrade.client import reset_sim_config
 import python_etrade.client as etclient
 import python_simtrade.client as simclient
 import holidays
@@ -89,6 +90,33 @@ def store_trade(stock, dt, decision, failed):
     trade.save()
 
 
+def get_quotes(client):
+    symbol_list = []
+    for stock in models.Stock.objects.all():
+        if str(stock.symbol) not in symbol_list:
+            symbol_list.append(str(stock.symbol))
+
+    for symbol in symbol_list:
+        cur_dt = client.current_time
+        quote = client.get_quote(symbol)
+        if quote is None:
+            continue
+        try:
+            prev_quote = models.Quote.objects.filter(symbol=symbol, date__lt=cur_dt).order_by('-date')[0]
+            day_start = datetime(year=cur_dt.year, month=cur_dt.month, day=cur_dt.day,
+                                 hour=0, minute=0, second=0)
+            if day_start < prev_quote.date:
+                continue
+        except IndexError:
+            pass
+
+        db_quote = models.Quote()
+        db_quote.date = cur_dt
+        db_quote.symbol = symbol
+        db_quote.price = quote.ask
+        db_quote.save()
+
+
 def run(dt=None):
     if dt is None:
         client = etclient.Client()
@@ -106,6 +134,9 @@ def run(dt=None):
 
     alg_ahnyung = AhnyungAlgorithm()
     alg_fill = FillAlgorithm()
+    alg_trend = TrendAlgorithm(dt)
+
+    get_quotes(client)
 
     order_ids = models.OrderID.objects.all()
     if not order_ids:
@@ -129,6 +160,8 @@ def run(dt=None):
             stock = account.get_stock(db_stock.symbol)
             if not stock:
                 stock = account.new_stock(db_stock.symbol)
+            if stock is None:
+                continue
 
             load_db_stock(db_stock, stock)
 
@@ -140,6 +173,9 @@ def run(dt=None):
                 logging.debug('run algorithm: %s' % stock.algorithm_string)
                 if stock.algorithm_string == 'ahnyung':
                     decision = alg_ahnyung.trade_decision(stock)
+                elif stock.algorithm_string == 'trend':
+                    decision = alg_trend.trade_decision(stock)
+
 
             logging.debug('decision=%d' % decision)
 
@@ -178,6 +214,8 @@ def run(dt=None):
 
 def simulate():
     #logging.basicConfig(level=logging.DEBUG)
+
+    reset_sim_config()
 
     models.Trade.objects.all().delete()
     models.Quote.objects.all().delete()

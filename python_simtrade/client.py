@@ -9,6 +9,14 @@ from datetime import datetime
 SIM_CONFIG_FILE = dirname(realpath(__file__)) + '/sim_config.json'
 
 
+def reset_sim_config():
+    config = dict()
+    config['accounts'] = [{'id': 38348704, 'cash_to_trade': 100000.0, 'stocks':[]}]
+
+    with open(SIM_CONFIG_FILE, 'w') as outfile:
+        json.dump(config, outfile, indent=2, sort_keys=False)
+
+
 class Client:
     def __init__(self):
         self.current_time = None
@@ -80,8 +88,9 @@ class Client:
         return self.account_dict[id]
 
     def get_quote(self, symbol):
-        quote = SimQuote(symbol)
-        quote.update(self.current_time)
+        quote = Quote(symbol)
+        if not quote.update(self.current_time):
+            return None
 
         if quote.ask is None:
             return None

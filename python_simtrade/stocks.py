@@ -3,6 +3,9 @@ import stock.models as models
 import logging
 
 
+TRANSACTION_FEE = 6.95
+
+
 class Quote:
     def __init__(self, symbol):
         self.symbol = symbol
@@ -65,6 +68,7 @@ class Stock:
 
         self.count += count
         self.account.cash_to_trade -= count * self.value
+        self.account.cash_to_trade -= TRANSACTION_FEE
 
         logging.debug('trade complete: %s %d' % (self.symbol, count))
 
