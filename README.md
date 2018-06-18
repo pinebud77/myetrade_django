@@ -36,8 +36,10 @@ Ingesting Stock History Data :
 
 Getting Performance Report after simulation or running the actual :
 1. open http://localhost:8000/stock/report/ : this will take time
-2. input desired date range for the report
-3. click submit and the .csv file will be downloaded
+1. input desired date range for the report
+1. click submit and the .csv file will be downloaded
+1. example report : https://docs.google.com/spreadsheets/d/1miU30kcAunXzcTWiENtOqByShoXa4KNWKlxZHGRO9to/edit?usp=sharing<br>
+(huh.. the return is -_-;;)
 
 Running the actual daily job :
 * open http://127.0.0.1:8000/stock/run/ on the same host as the server

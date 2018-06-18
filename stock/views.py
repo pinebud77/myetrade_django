@@ -136,7 +136,7 @@ def reportrange_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
     writer = csv.writer(response)
     header = ['date']
     for account in account_id_list:
-        header.append(account)
+        header.append('account:%d' % account)
     for symbol in symbol_list:
         header.append(symbol)
     writer.writerow(header)
