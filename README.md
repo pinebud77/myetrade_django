@@ -5,9 +5,10 @@ This is personal test for Django + my trading code.
 
 ToDO :
 * overall code refinement and bug fix
-* bug fix : account value changes before stock price -_-;
 * show the buy/sell log
 * record the trend of the specific stocks
+* remove ALG related fields from the DB schema
+* add failure reason to Trade
 
 Done :
 * running algorithm based on the server address

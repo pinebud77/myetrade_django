@@ -12,9 +12,8 @@ class Quote:
         self.ask = None
 
     def update(self, cur_time):
-        dt = date(year=cur_time.year, month=cur_time.month, day=cur_time.day)
         try:
-            quote = models.SimQuote.objects.filter(symbol=self.symbol, date__lte=dt).order_by('-date')[0]
+            quote = models.SimQuote.objects.filter(symbol=self.symbol, date__lte=cur_time).order_by('-date')[0]
         except IndexError:
             return False
         self.ask = quote.price

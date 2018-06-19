@@ -5,7 +5,6 @@ from . import models
 from .config import *
 from .algorithms import AhnyungAlgorithm, FillAlgorithm, TrendAlgorithm
 from datetime import date, datetime, timedelta
-from python_simtrade.client import reset_sim_config
 import python_etrade.client as etclient
 import python_simtrade.client as simclient
 import holidays
@@ -38,13 +37,13 @@ def load_db_stock(db_stock, stock):
     stock.last_count = db_stock.last_count
 
     if stock.last_sell_price is None:
-        stock.last_sell_price = 0
+        stock.last_sell_price = 0.0
     if stock.last_buy_price is None:
-        stock.last_buy_price = 0
+        stock.last_buy_price = 0.0
     if stock.last_value is None:
-        stock.last_value = 0
+        stock.last_value = 0.0
     if stock.last_count is None:
-        stock.last_count = 0
+        stock.last_count = 0.0
 
 
 def store_db_stock(db_stock, stock):
@@ -117,6 +116,26 @@ def get_quotes(client, dt):
         db_quote.save()
 
 
+def get_order_id():
+    order_ids = models.OrderID.objects.all()
+    if not order_ids:
+        order_id_obj = models.OrderID()
+        order_id_obj.order_id = 200
+        order_id_obj.save()
+        order_ids = models.OrderID.objects.all()
+
+    order_id_obj = order_ids[0]
+    order_id = order_id_obj.order_id
+
+    return order_id
+
+
+def store_order_id(order_id):
+    order_id_obj = models.OrderID.objects.all()[0]
+    order_id_obj.order_id = order_id
+    order_id_obj.save()
+
+
 alg_ahnyung = AhnyungAlgorithm()
 alg_fill = FillAlgorithm()
 alg_trend = TrendAlgorithm(None)
@@ -140,27 +159,16 @@ def run(dt=None, client=None):
         need_logout = True
 
     alg_trend.dt = dt
-
     get_quotes(client, dt)
-
-    order_ids = models.OrderID.objects.all()
-    if not order_ids:
-        order_id_obj = models.OrderID()
-        order_id_obj.order_id = 200
-        order_id_obj.save()
-        order_ids = models.OrderID.objects.all()
-
-    order_id_obj = order_ids[0]
-    order_id = order_id_obj.order_id
+    order_id = get_order_id()
 
     for db_account in models.Account.objects.all():
         account = client.get_account(db_account.account_id)
         load_db_account(db_account, account)
 
-        logging.debug('account mode: %s' % account.mode)
+        logging.debug('account id:%d mode: %s' % (account.id, account.mode))
 
         trade_failed = False
-
         for db_stock in models.Stock.objects.filter(account=db_account):
             stock = account.get_stock(db_stock.symbol)
             if not stock:
@@ -209,8 +217,7 @@ def run(dt=None, client=None):
         store_db_account(db_account, account)
         store_day_report(db_account, dt)
 
-    order_id_obj.order_id = order_id
-    order_id_obj.save()
+    store_order_id(order_id)
 
     if need_logout:
         client.logout()
@@ -219,8 +226,6 @@ def run(dt=None, client=None):
 
 def simulate():
     #logging.basicConfig(level=logging.DEBUG)
-
-    reset_sim_config()
 
     models.Trade.objects.all().delete()
     models.Quote.objects.all().delete()
@@ -254,6 +259,7 @@ def simulate():
     day_delta = timedelta(1)
     us_holidays = holidays.UnitedStates()
 
+    simclient.reset_sim_config()
     client = simclient.Client()
     client.login(cur_dt)
     while cur_dt < last_dt:

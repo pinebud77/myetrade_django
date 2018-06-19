@@ -21,6 +21,7 @@ class Account:
             if not res:
                 continue
             self.net_value += stock.value * stock.count
+
         logging.debug('Account: %d' % self.id)
         logging.debug('Net value: %f' % self.net_value)
         logging.debug('cash to trade: %f' % self.cash_to_trade)

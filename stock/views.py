@@ -104,7 +104,8 @@ def reportrange_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
                 line.append(0.0)
             col += 1
         for symbol in symbol_list:
-            quote_date = date(year=day_report.date.year, month=day_report.date.month, day=day_report.date.day)
+            quote_date = datetime(year=day_report.date.year, month=day_report.date.month, day=day_report.date.day,
+                                  hour=12, minute=59, second=59)
             try:
                 quote = Quote.objects.filter(symbol=symbol, date__lte=quote_date).order_by('-date')[0]
                 val = float(quote.price)
