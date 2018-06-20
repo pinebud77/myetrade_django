@@ -6,13 +6,16 @@ import io
 import urllib
 from . import models
 from .algorithms import AhnyungAlgorithm, FillAlgorithm, TrendAlgorithm
-from .private_algorithms import DayTrendAlgorithm
 from datetime import date, datetime, timedelta
 from django.db import transaction
 import python_etrade.client as etclient
 import python_simtrade.client as simclient
 import holidays
 
+try:
+    from .private_algorithms import DayTrendAlgorithm
+except ModuleNotFoundError:
+    from .algorithms import TrendAlgorithm as DayTrendAlgorithm
 
 LOG_FORMAT = '%(asctime)-15s %(message)s'
 
