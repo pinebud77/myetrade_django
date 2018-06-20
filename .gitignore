@@ -7,4 +7,6 @@ python_etrade
 __pycache__
 myetrade_django/settings.py
 stock/trend_alg_config.pickle
+stock/migrations
+stock/private_algorithms.py
 python_simtrade/sim_config.json

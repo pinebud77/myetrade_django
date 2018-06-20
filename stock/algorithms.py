@@ -14,6 +14,14 @@ MODERATE = 1
 AGGRESSIVE = 2          # more frequent trading
 
 
+def buy_all(stock):
+    budget = stock.account.cash_to_trade
+    if budget > stock.budget:
+        budget = stock.budget
+
+    return int(budget / stock.value)
+
+
 class TradeAlgorithm:
     def trade_decision(self, stock):
         return 0
@@ -22,14 +30,14 @@ class TradeAlgorithm:
 trend_variables = [
     {'up_count': 3, 'down_count': 4, 'pause_count': 7},  # conservative
     {'up_count': 2, 'down_count': 3, 'pause_count': 6},  # moderate
-    {'up_count': 1, 'down_count': 2, 'pause_count': 5},  # aggressive
+    {'up_count': 2, 'down_count': 2, 'pause_count': 5},  # aggressive
 ]
 MIN_HISTORY = 10
 
 
 class TrendAlgorithm(TradeAlgorithm):
     def __init__(self, dt):
-        super(TradeAlgorithm, self).__init__()
+        super(TrendAlgorithm, self).__init__()
         self.dt = dt
 
     def trade_decision(self, stock):
@@ -73,10 +81,7 @@ class TrendAlgorithm(TradeAlgorithm):
                 pickle.dump(pause_dict, open(TREND_CONFIG, 'wb'))
                 return 0
             if keep_up >= up_count:
-                budget = stock.account.cash_to_trade
-                if budget > stock.budget:
-                    budget = stock.budget
-                count = int(budget / stock.value)
+                count = buy_all(stock)
                 logging.debug('%s: buy %d' % (stock.symbol, count))
                 return count
             return 0
@@ -97,16 +102,10 @@ ahnyung_variables = [
 
 class AhnyungAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
-        budget = stock.account.cash_to_trade
-        if budget > stock.budget:
-            budget = stock.budget
-
-        logging.debug('ahnyung: budget %f' % stock.budget)
-
         if not stock.count:
             decrease_rate = (stock.last_sell_price - stock.value) / stock.value
             if decrease_rate < ahnyung_variables[stock.stance]['buy_again']:
-                return int(budget / stock.value)
+                buy_all(stock)
         else:
             day_change_rate = (stock.value - stock.last_value) / stock.value
             if day_change_rate < ahnyung_variables[stock.stance]['day_low']:

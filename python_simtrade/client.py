@@ -78,7 +78,8 @@ class Client:
                                   'count': stock.count}
                 new_json_account['stocks'].append(new_json_stock)
 
-        logging.debug(self.config)
+        logging.debug('\nlogout sim client')
+        logging.debug('config' + str(self.config))
 
         with open(SIM_CONFIG_FILE, 'w') as outfile:
             json.dump(self.config, outfile, indent=2, sort_keys=False)

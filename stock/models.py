@@ -13,16 +13,40 @@ class Quote(models.Model):
         return '%d/%d/%d: %s - %f' % (self.date.month, self.date.day, self.date.year, self.symbol, self.price)
 
 
-class SimQuote(models.Model):
+class DayHistory(models.Model):
     class Meta:
         unique_together = (('symbol', 'date'),)
 
     symbol = models.CharField(max_length=10)
-    date = models.DateTimeField('date of quote')
-    price = models.FloatField('price of the symbol at the time')
+    date = models.DateField('date of the history')
+    open = models.FloatField()
+    high = models.FloatField()
+    low = models.FloatField()
+    close = models.FloatField()
+    volume = models.IntegerField()
 
     def __str__(self):
-        return '%d/%d/%d: %s - %f' % (self.date.month, self.date.day, self.date.year, self.symbol, self.price)
+        return '%2.2d/%2.2d/%4.4d - %s: open %f high %f low %f close %f volume %d' \
+               % (self.date.month, self.date.day, self.date.year, self.symbol,
+                  self.open, self.high, self.low, self.close, self.volume)
+
+
+class SimHistory(models.Model):
+    class Meta:
+        unique_together = (('symbol', 'date'),)
+
+    date = models.DateTimeField('date of quote')
+    symbol = models.CharField(max_length=10)
+    open = models.FloatField('open of the symbol at the time')
+    high = models.FloatField('high of the symbol at the time')
+    low = models.FloatField('low of the symbol at the time')
+    close = models.FloatField('close of the symbol at the time')
+    volume = models.FloatField('volume of the symbol at the time')
+
+    def __str__(self):
+        return '%2.2d/%2.2d/%4.4d - %s: open %f high %f low %f close %f volume %d' \
+               % (self.date.month, self.date.day, self.date.year, self.symbol,
+                  self.open, self.high, self.low, self.close, self.volume)
 
 
 MODE_SETUP = 0
@@ -84,11 +108,13 @@ ALGORITHM_FILL = 0
 ALGORITHM_AHNYUNG = 1
 ALGORITHM_EMPTY = 2
 ALGORITHM_TREND = 3
+ALGORITHM_DAY_TREND = 4
 ALGORITHM_CHOICE = (
     (ALGORITHM_FILL, 'fill'),
     (ALGORITHM_AHNYUNG, 'ahnyung'),
     (ALGORITHM_EMPTY, 'empty'),
     (ALGORITHM_TREND, 'trend'),
+    (ALGORITHM_DAY_TREND, 'day_trend'),
 )
 
 

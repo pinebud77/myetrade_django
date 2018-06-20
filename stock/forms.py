@@ -8,7 +8,14 @@ class LoginForm(forms.Form):
 
 
 class ReportForm(forms.Form):
-    td = timedelta(7)
+    td = timedelta(30)
+
+    start_date = forms.DateField(initial=date.today()-td)
+    end_date = forms.DateField(initial=date.today())
+
+
+class SimulateForm(forms.Form):
+    td = timedelta(30)
 
     start_date = forms.DateField(initial=date.today()-td)
     end_date = forms.DateField(initial=date.today())

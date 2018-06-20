@@ -22,6 +22,7 @@ class Account:
                 continue
             self.net_value += stock.value * stock.count
 
+        logging.debug('\nupdating account')
         logging.debug('Account: %d' % self.id)
         logging.debug('Net value: %f' % self.net_value)
         logging.debug('cash to trade: %f' % self.cash_to_trade)

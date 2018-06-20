@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
 import logging
+import csv
+import io
+import urllib
 from . import models
-from .config import *
 from .algorithms import AhnyungAlgorithm, FillAlgorithm, TrendAlgorithm
+from .private_algorithms import DayTrendAlgorithm
 from datetime import date, datetime, timedelta
+from django.db import transaction
 import python_etrade.client as etclient
 import python_simtrade.client as simclient
 import holidays
@@ -58,9 +62,8 @@ def store_db_stock(db_stock, stock):
 
 def store_day_report(db_account, dt):
     try:
-        prev_report = models.DayReport.objects.filter(account=db_account, date__lte=dt).order_by('-date')[0]
-        if prev_report.date.year == dt.year and prev_report.date.month == dt.month and prev_report.date.day == dt.day:
-            prev_report.delete()
+        t_date = date(year=dt.year, month=dt.month, day=dt.day)
+        prev_report = models.DayReport.objects.filter(account=db_account, date=t_date)[0]
     except IndexError:
         pass
     day_report = models.DayReport()
@@ -139,8 +142,10 @@ def store_order_id(order_id):
 alg_ahnyung = AhnyungAlgorithm()
 alg_fill = FillAlgorithm()
 alg_trend = TrendAlgorithm(None)
+alg_day_trend = DayTrendAlgorithm(None)
 
 
+@transaction.atomic
 def run(dt=None, client=None):
     if dt is None:
         dt = datetime.now()
@@ -159,6 +164,8 @@ def run(dt=None, client=None):
         need_logout = True
 
     alg_trend.dt = dt
+    alg_day_trend.dt = dt
+
     get_quotes(client, dt)
     order_id = get_order_id()
 
@@ -188,6 +195,8 @@ def run(dt=None, client=None):
                     decision = alg_ahnyung.trade_decision(stock)
                 elif stock.algorithm_string == 'trend':
                     decision = alg_trend.trade_decision(stock)
+                elif stock.algorithm_string == 'day_trend':
+                    decision = alg_day_trend.trade_decision(stock)
 
             logging.debug('decision=%d' % decision)
 
@@ -224,12 +233,13 @@ def run(dt=None, client=None):
         logging.debug('logged out')
 
 
-def simulate():
+def simulate(start_date=None, end_date=None):
     #logging.basicConfig(level=logging.DEBUG)
 
     models.Trade.objects.all().delete()
     models.Quote.objects.all().delete()
     models.DayReport.objects.all().delete()
+    models.DayHistory.objects.all().delete()
 
     for db_account in models.Account.objects.all():
         db_account.mode = models.MODE_SETUP
@@ -239,15 +249,28 @@ def simulate():
             db_stock.count = 0
             db_stock.save()
 
-    first_quote = models.SimQuote.objects.all().order_by('date')[0]
-    last_quote = models.SimQuote.objects.all().order_by('-date')[0]
+    if start_date is None:
+        first_quote = models.SimHistory.objects.all().order_by('date')[0]
+    else:
+        try:
+            first_quote = models.SimHistory.objects.filter(date__gte=start_date).order_by('date')[0]
+        except IndexError:
+            return False
 
     cur_dt = datetime(year=first_quote.date.year,
                       month=first_quote.date.month,
                       day=first_quote.date.day,
-                      hour=8,
-                      minute=0,
+                      hour=7,
+                      minute=31,
                       second=0)
+
+    if end_date is None:
+        last_quote = models.SimHistory.objects.all().order_by('-date')[0]
+    else:
+        try:
+            last_quote = models.SimHistory.objects.filter(date__lte=end_date).order_by('-date')[0]
+        except IndexError:
+            return False
 
     last_dt = datetime(year=last_quote.date.year,
                        month=last_quote.date.month,
@@ -273,6 +296,89 @@ def simulate():
         client.update(cur_dt)
         run(dt=cur_dt, client=client)
         cur_dt += day_delta
+        cur_date = date(year=cur_dt.year, month=cur_dt.month, day=cur_dt.day)
+        load_history_simquote(cur_date)
 
     client.logout()
+
+    return True
+
+
+def load_history_simquote(cur_date):
+    symbol_list = []
+
+    for stock in models.Stock.objects.all():
+        if str(stock.symbol) not in symbol_list:
+            symbol_list.append(str(stock.symbol))
+
+    for symbol in symbol_list:
+        try:
+            sim_history = models.SimHistory.objects.filter(symbol=symbol, date=cur_date)[0]
+        except IndexError:
+            continue
+
+        day_history = models.DayHistory()
+        day_history.symbol = sim_history.symbol
+        day_history.date = sim_history.date
+        day_history.open = sim_history.open
+        day_history.high = sim_history.high
+        day_history.low = sim_history.low
+        day_history.close = sim_history.close
+        day_history.volume = sim_history.volume
+        day_history.save()
+
+
+def load_history_wsj(today):
+    symbol_list = []
+
+    for stock in models.Stock.objects.all():
+        if str(stock.symbol) not in symbol_list:
+            symbol_list.append(str(stock.symbol))
+    for symbol in symbol_list:
+        try:
+            today_history = models.DayHistory.objects.filter(symbol=symbol, date=today)[0]
+            if today_history:
+                continue
+        except IndexError:
+            pass
+
+    td = timedelta(10)
+    start_date = today - td
+
+    for symbol in symbol_list:
+        try:
+            today_history = models.DayHistory.objects.filter(symbol=symbol, date=today)[0]
+            if today_history:
+                continue
+        except IndexError:
+            pass
+
+        url = 'http://quotes.wsj.com/%s/historical-prices/download?MOD_VIEW=page&' \
+              'num_rows=100&range_days=100&endDate=%2.2d/%2.2d/%4.4d&' \
+              'startDate=%2.2d/%2.2d/%4.4d' \
+              % (symbol, today.month, today.day, today.year, start_date.month, start_date.day, start_date.year)
+        page = urllib.request.urlopen(url)
+        reader = csv.reader(io.TextIOWrapper(page))
+
+        for row in reader:
+            print(row)
+            if row[0] == 'Date':
+                continue
+            dates = row[0].split('/')
+            t_date = date(year=int(dates[2])+2000, month=int(dates[0]), day=int(dates[1]))
+            try:
+                t_history = models.DayHistory.objects.filter(symbol=symbol, date=t_date)[0]
+                break
+            except IndexError:
+                pass
+
+            day_history = models.DayHistory()
+            day_history.symbol = symbol
+            day_history.date = t_date
+            day_history.open = float(row[1])
+            day_history.high = float(row[2])
+            day_history.low = float(row[3])
+            day_history.close = float(row[4])
+            day_history.volume = int(row[5])
+            day_history.save()
 

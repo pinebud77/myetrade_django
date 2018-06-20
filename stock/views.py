@@ -1,7 +1,7 @@
 import logging
 import csv
 from . import main
-from . import load_history
+from python_simtrade import load_history
 from .forms import *
 from .models import *
 from django.contrib.auth import authenticate, login, logout
@@ -11,8 +11,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, date
-from os.path import realpath, dirname, join, basename
-
+from os.path import realpath, dirname
 
 CUR_DIR = dirname(realpath(__file__))
 
@@ -101,7 +100,7 @@ def reportrange_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
             if base_values[col - 1]:
                 line.append(val / base_values[col - 1])
             else:
-                line.append(0.0)
+                line.append(1.0)
             col += 1
         for symbol in symbol_list:
             quote_date = datetime(year=day_report.date.year, month=day_report.date.month, day=day_report.date.day,
@@ -116,7 +115,7 @@ def reportrange_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
             if base_values[col - 1]:
                 line.append(val / base_values[col - 1])
             else:
-                line.append(0.0)
+                line.append(1.0)
             col += 1
 
         line_tuple = tuple(line)
@@ -176,6 +175,7 @@ def run_page(request):
     if ip != '127.0.0.1':
         return render(request, 'stock/error.txt', {})
 
+    main.load_history_wsj(date.today())
     main.run()
 
     return render(request, 'stock/success.txt', {})
@@ -185,6 +185,36 @@ def simulate_page(request):
     if not request.user.is_authenticated:
         return redirect('/stock/')
 
-    main.simulate()
+    if request.method == 'POST':
+        start_date = request.POST['start_date']
+        end_date = request.POST['end_date']
+
+        return redirect('/stock/run_sim/%s-%s' % (start_date, end_date))
+    else:
+        form = SimulateForm()
+        return render(request, 'stock/simulate.html', {'form': form})
+
+
+def test_page(request):
+    if not request.user.is_authenticated:
+        return redirect('/stock/')
+
+    main.load_history_wsj(date.today())
 
     return render(request, 'stock/success.txt', {})
+
+
+def run_sim_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
+    if not request.user.is_authenticated:
+        return redirect('/stock/')
+
+    start_dt = date(year=int(s_year), month=int(s_month), day=int(s_day))
+    end_dt = date(year=int(e_year), month=int(e_month), day=int(e_day))
+
+    res = main.simulate(start_dt, end_dt)
+
+    if res:
+        return redirect('/stock/report/')
+    else:
+        return render(request, 'stock/error.txt', {})
+

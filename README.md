@@ -5,10 +5,10 @@ This is personal test for Django + my trading code.
 
 ToDO :
 * overall code refinement and bug fix
-* show the buy/sell log
 * record the trend of the specific stocks
 * remove ALG related fields from the DB schema
-* add failure reason to Trade
+* add all data to market history
+* add failure reason for market_trade
 
 Done :
 * running algorithm based on the server address
@@ -16,6 +16,8 @@ Done :
 
 Installation :
 1. generate your own /myetrade_djnago/settings.py : you can refer setting.py.sample
+1. $ git clone https://github.com/pinebud77/python_etrade.git
+1. creat /stock/config.py file for the account (empty file for simulation only)
 1. $ python3 manage.py migrate
 1. $ python3 manage.py makemigrations stock
 1. $ python3 manage.py migrate

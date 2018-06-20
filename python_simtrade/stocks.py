@@ -12,11 +12,12 @@ class Quote:
         self.ask = None
 
     def update(self, cur_time):
+        cd = date(year=cur_time.year, month=cur_time.month, day=cur_time.day)
         try:
-            quote = models.SimQuote.objects.filter(symbol=self.symbol, date__lte=cur_time).order_by('-date')[0]
+            history = models.SimHistory.objects.filter(symbol=self.symbol, date__lte=cd).order_by('-date')[0]
         except IndexError:
             return False
-        self.ask = quote.price
+        self.ask = history.open
 
         logging.debug('quote: %s' % self.symbol)
         logging.debug('price: %f' % self.ask)
