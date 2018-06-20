@@ -109,12 +109,16 @@ ALGORITHM_AHNYUNG = 1
 ALGORITHM_EMPTY = 2
 ALGORITHM_TREND = 3
 ALGORITHM_DAY_TREND = 4
+ALGORITHM_OVER_BUY = 5
+ALGORITHM_OVER_SELL = 6
 ALGORITHM_CHOICE = (
     (ALGORITHM_FILL, 'fill'),
     (ALGORITHM_AHNYUNG, 'ahnyung'),
     (ALGORITHM_EMPTY, 'empty'),
     (ALGORITHM_TREND, 'trend'),
     (ALGORITHM_DAY_TREND, 'day_trend'),
+    (ALGORITHM_OVER_BUY, 'over_buy'),
+    (ALGORITHM_OVER_SELL, 'over_sell'),
 )
 
 
@@ -139,6 +143,13 @@ class Stock(models.Model):
                                       self.count)
 
 
+class FailureReason(models.Model):
+    message = models.CharField(primary_key=True, max_length=300)
+
+    def __str__(self):
+        return str(self.message)
+
+
 ACTION_BUY = 0
 ACTION_SELL = 1
 ACTION_BUY_FAIL = 2
@@ -161,19 +172,21 @@ class Trade(models.Model):
     price = models.FloatField()
     count = models.IntegerField()
     action = models.IntegerField(choices=ACTION_CHOICE)
+    failure_reason = models.ForeignKey(FailureReason, on_delete=models.CASCADE)
 
     def __str__(self):
         action_string = 'unknown'
         for en in ACTION_CHOICE:
             if en[0] == self.action:
                 action_string = en[1]
-        return '%d/%d/%d - %d: %s %s %f' % (self.date.month,
-                                            self.date.day,
-                                            self.date.year,
-                                            self.account_id,
-                                            self.symbol,
-                                            action_string,
-                                            self.price * self.count)
+        return '%d/%d/%d - %d: %s %s %f %s' % (self.date.month,
+                                               self.date.day,
+                                               self.date.year,
+                                               self.account_id,
+                                               self.symbol,
+                                               action_string,
+                                               self.price * self.count,
+                                               self.failure_reason.message)
 
 
 class OrderID(models.Model):

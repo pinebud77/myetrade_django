@@ -176,9 +176,12 @@ def run_page(request):
         return render(request, 'stock/error.txt', {})
 
     main.load_history_wsj(date.today())
-    main.run()
+    result = main.run()
 
-    return render(request, 'stock/success.txt', {})
+    if result:
+        return render(request, 'stock/success.txt', {})
+    else:
+        return render(request, 'stock/error.txt', {})
 
 
 def simulate_page(request):

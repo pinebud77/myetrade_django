@@ -5,12 +5,17 @@ import csv
 import io
 import urllib
 from . import models
-from .algorithms import AhnyungAlgorithm, FillAlgorithm, TrendAlgorithm
+from .algorithms import AhnyungAlgorithm, FillAlgorithm, TrendAlgorithm, OverBuyAlgorithm, OverSellAlgorithm
 from datetime import date, datetime, timedelta
 from django.db import transaction
 import python_etrade.client as etclient
 import python_simtrade.client as simclient
 import holidays
+
+try:
+    from .config import *
+except ModuleNotFoundError:
+    pass
 
 try:
     from .private_algorithms import DayTrendAlgorithm
@@ -77,7 +82,15 @@ def store_day_report(db_account, dt):
     day_report.save()
 
 
-def store_trade(stock, dt, decision, failed):
+def store_trade(stock, dt, decision, failed, failure_reason):
+    reasons = models.FailureReason.objects.filter(message=failure_reason)
+    if not reasons:
+        reason = models.FailureReason()
+        reason.message = failure_reason
+        reason.save()
+    else:
+        reason = reasons[0]
+
     trade = models.Trade()
 
     trade.date = dt
@@ -85,6 +98,7 @@ def store_trade(stock, dt, decision, failed):
     trade.account_id = stock.account.id
     trade.count = abs(decision)
     trade.price = stock.value
+    trade.failure_reason = reason
 
     if decision > 0 and not failed:
         trade.action = models.ACTION_BUY
@@ -146,15 +160,20 @@ alg_ahnyung = AhnyungAlgorithm()
 alg_fill = FillAlgorithm()
 alg_trend = TrendAlgorithm(None)
 alg_day_trend = DayTrendAlgorithm(None)
+alg_over_buy = OverBuyAlgorithm()
+alg_over_sell = OverSellAlgorithm()
 
 
 @transaction.atomic
 def run(dt=None, client=None):
+    logging.basicConfig(level=logging.DEBUG)
     if dt is None:
         dt = datetime.now()
 
     need_logout = False
     if client is None:
+        if etrade_consumer_key is None:
+            return False
         client = etclient.Client()
         result = client.login(etrade_consumer_key,
                               etrade_consumer_secret,
@@ -162,7 +181,7 @@ def run(dt=None, client=None):
                               etrade_passwd)
         if not result:
             logging.error('login failed')
-            return
+            return False
         logging.debug('logged in')
         need_logout = True
 
@@ -200,6 +219,10 @@ def run(dt=None, client=None):
                     decision = alg_trend.trade_decision(stock)
                 elif stock.algorithm_string == 'day_trend':
                     decision = alg_day_trend.trade_decision(stock)
+                elif stock.algorithm_string == 'over_buy':
+                    decision = alg_over_buy.trade_decision(stock)
+                elif stock.algorithm_string == 'over_sell':
+                    decision = alg_over_sell.trade_decision(stock)
 
             logging.debug('decision=%d' % decision)
 
@@ -214,7 +237,7 @@ def run(dt=None, client=None):
                         trade_failed = True
 
                 order_id += 1
-                store_trade(stock, dt, decision, trade_failed)
+                store_trade(stock, dt, decision, trade_failed, stock.get_failure_reason())
 
             if not trade_failed and account.mode == 'setup':
                 stock.last_buy_price = stock.value

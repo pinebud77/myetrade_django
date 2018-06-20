@@ -137,3 +137,13 @@ class FillAlgorithm(TradeAlgorithm):
 class EmptyAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
         return -stock.count
+
+
+class OverBuyAlgorithm(TradeAlgorithm):
+    def trade_decision(self, stock):
+        return 10000000000
+
+
+class OverSellAlgorithm(TradeAlgorithm):
+    def trade_decision(self, stock):
+        return -10000000000

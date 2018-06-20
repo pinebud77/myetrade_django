@@ -38,6 +38,7 @@ class Stock:
         self.algorithm_string = 'ahnyung'
         self.stance = 1
         self.valid = True
+        self.failure_reason = 'success'
 
     def update(self, dt):
         quote = Quote(self.symbol)
@@ -46,20 +47,28 @@ class Stock:
             self.valid = False
             return False
         self.value = quote.ask
+        logging.debug('\nupdating stock')
         logging.debug('stock: %s' % self.symbol)
         logging.debug('price: %f' % self.value)
 
         return True
 
+    def get_failure_reason(self):
+        return self.failure_reason
+
     def market_order(self, count, order_id):
         if not self.valid:
             return False
         if count < 0 and -count > self.count:
-            logging.error('market_order: no enough stock count')
+            logging.error('market_order: not enough stock count')
+            self.failure_reason = 'not enough stock count'
             return False
         if count > 0 and count * self.value > self.account.cash_to_trade:
-            logging.error('market_order: no enough cash')
+            logging.error('market_order: not enough cash')
+            self.failure_reason = 'not enough cash'
             return False
+
+        self.failure_reason = 'success'
 
         self.count += count
         self.account.cash_to_trade -= count * self.value
