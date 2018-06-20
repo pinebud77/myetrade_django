@@ -95,7 +95,7 @@ def reportrange_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
                 val = float(day_report.net_value)
             else:
                 val = prev_line[col]
-            if base_values[col - 1] == 0.0 and val != 0.0:
+            if base_values[col - 1] == 0.0 and val != 1.0:
                 base_values[col - 1] = val
             if base_values[col - 1]:
                 line.append(val / base_values[col - 1])
@@ -110,7 +110,7 @@ def reportrange_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
                 val = float(quote.price)
             except IndexError:
                 val = prev_line[col]
-            if base_values[col - 1] == 0.0 and val != 0.0:
+            if base_values[col - 1] == 0.0 and val != 1.0:
                 base_values[col - 1] = val
             if base_values[col - 1]:
                 line.append(val / base_values[col - 1])
