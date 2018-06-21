@@ -30,6 +30,7 @@ class DayReportAdmin(admin.ModelAdmin):
     ordering = ('-date', 'account_id')
 
 
+admin.site.register(OrderID)
 admin.site.register(Quote)
 admin.site.register(Stock)
 admin.site.register(DayHistory, DayHistoryAdmin)

@@ -207,6 +207,7 @@ def run(dt=None, client=None):
             if not stock:
                 stock = account.new_stock(db_stock.symbol)
             if stock is None:
+                logging.error('new stock is None %s' % db_stock.symbol)
                 continue
 
             load_db_stock(db_stock, stock)
