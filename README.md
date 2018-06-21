@@ -49,6 +49,6 @@ Getting Performance Report after simulation or running the actual :
 Running the actual daily job :
 * open http://127.0.0.1:8000/stock/run/ on the same host as the server
 * add cronjob for the user as the following if it works well:<br>
-0 7 * * 1-5 /home/pi/myetrade_django/run_cron.sh
+30 6 * * 1-5 /home/pi/myetrade_django/run_cron.sh
 * This will run your algorithm every 7:00am (because I am at Western area)
 
