@@ -4,11 +4,12 @@
 import csv
 import urllib
 import io
-from os import listdir
-from os.path import isfile, join, splitext, realpath, dirname
-from stock.models import SimHistory
+import logging
+from os.path import join, realpath, dirname
+from stock.models import SimHistory, Stock
 from datetime import date
 from django.db import transaction
+from time import sleep
 
 
 DATA_PATH = dirname(realpath(__file__)) + '/market_history'
@@ -16,9 +17,10 @@ DATA_PATH = dirname(realpath(__file__)) + '/market_history'
 
 def get_symbol_list():
     result = []
-    for file in listdir(DATA_PATH):
-        if isfile(join(DATA_PATH, file)):
-            result.append(splitext(file)[0])
+
+    for stock in Stock.objects.all():
+        if str(stock.symbol) not in result:
+            result.append(str(stock.symbol))
 
     return result
 
@@ -59,7 +61,6 @@ def load_web(symbol):
     reader = csv.reader(io.TextIOWrapper(page))
 
     for row in reader:
-        print(row)
         if row[0] == 'Date':
             continue
         dates = row[0].split('/')
@@ -82,5 +83,6 @@ def load_data():
     symbols = get_symbol_list()
 
     for symbol in symbols:
-        #load_web(symbol)
-        load_csv(symbol)
+        load_web(symbol)
+        sleep(3)
+        #load_csv(symbol)

@@ -211,13 +211,15 @@ def run_sim_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
     if not request.user.is_authenticated:
         return redirect('/stock/')
 
-    start_dt = date(year=int(s_year), month=int(s_month), day=int(s_day))
-    end_dt = date(year=int(e_year), month=int(e_month), day=int(e_day))
+    start_date = date(year=int(s_year), month=int(s_month), day=int(s_day))
+    end_date = date(year=int(e_year), month=int(e_month), day=int(e_day))
 
-    res = main.simulate(start_dt, end_dt)
+    res = main.simulate(start_date, end_date)
 
     if res:
-        return redirect('/stock/report/')
+        return redirect('/stock/reportrange/%4.4d-%2.2d-%2.2d-%4.4d-%2.2d-%2.2d' %
+                        (start_date.year, start_date.month, start_date.day,
+                         end_date.year, end_date.month, end_date.day))
     else:
         return render(request, 'stock/error.txt', {})
 
