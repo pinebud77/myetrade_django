@@ -167,7 +167,7 @@ alg_over_sell = OverSellAlgorithm()
 
 @transaction.atomic
 def run(dt=None, client=None):
-    logging.basicConfig(level=logging.DEBUG)
+    #logging.basicConfig(level=logging.DEBUG)
     if dt is None:
         dt = datetime.now()
 
