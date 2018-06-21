@@ -72,6 +72,7 @@ def store_day_report(db_account, dt):
     try:
         t_date = date(year=dt.year, month=dt.month, day=dt.day)
         prev_report = models.DayReport.objects.filter(account=db_account, date=t_date)[0]
+        prev_report.delete()
     except IndexError:
         pass
     day_report = models.DayReport()
@@ -193,6 +194,9 @@ def run(dt=None, client=None):
 
     for db_account in models.Account.objects.all():
         account = client.get_account(db_account.account_id)
+        if account is None:
+            logging.error('getting account failed: wrong account_id?')
+            continue
         load_db_account(db_account, account)
 
         logging.debug('account id:%d mode: %s' % (account.id, account.mode))
@@ -257,6 +261,8 @@ def run(dt=None, client=None):
     if need_logout:
         client.logout()
         logging.debug('logged out')
+
+    return True
 
 
 def simulate(start_date=None, end_date=None):
