@@ -30,9 +30,6 @@ class Stock:
         self.account = account
         self.count = None
         self.value = None
-        self.last_value = 0.0
-        self.last_sell_price = 0.0
-        self.last_buy_price = 0.0
         self.last_count = 0
         self.budget = 0.0
         self.algorithm_string = 'ahnyung'

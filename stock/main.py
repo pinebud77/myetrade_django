@@ -5,7 +5,7 @@ import csv
 import io
 import urllib
 from . import models
-from .algorithms import AhnyungAlgorithm, FillAlgorithm, TrendAlgorithm, OverBuyAlgorithm, OverSellAlgorithm
+from .algorithms import FillAlgorithm, TrendAlgorithm, OverBuyAlgorithm, OverSellAlgorithm
 from datetime import date, datetime, timedelta
 from django.db import transaction
 import python_etrade.client as etclient
@@ -43,17 +43,8 @@ def load_db_stock(db_stock, stock):
     stock.algorithm_string = models.ALGORITHM_CHOICE[db_stock.algorithm][1]
 
     stock.stance = db_stock.stance
-    stock.last_sell_price = db_stock.last_sell_price
-    stock.last_buy_price = db_stock.last_buy_price
-    stock.last_value = db_stock.last_value
     stock.last_count = db_stock.last_count
 
-    if stock.last_sell_price is None:
-        stock.last_sell_price = 0.0
-    if stock.last_buy_price is None:
-        stock.last_buy_price = 0.0
-    if stock.last_value is None:
-        stock.last_value = 0.0
     if stock.last_count is None:
         stock.last_count = 0.0
 
@@ -61,9 +52,6 @@ def load_db_stock(db_stock, stock):
 def store_db_stock(db_stock, stock):
     db_stock.value = stock.value
     db_stock.count = stock.count
-    db_stock.last_sell_price = stock.last_sell_price
-    db_stock.last_buy_price = stock.last_buy_price
-    db_stock.last_value = stock.last_value
     db_stock.last_count = stock.last_count
     db_stock.save()
 
@@ -157,7 +145,6 @@ def store_order_id(order_id):
     order_id_obj.save()
 
 
-alg_ahnyung = AhnyungAlgorithm()
 alg_fill = FillAlgorithm()
 alg_trend = TrendAlgorithm(None)
 alg_day_trend = DayTrendAlgorithm(None)
@@ -218,9 +205,7 @@ def run(dt=None, client=None):
                 decision = alg_fill.trade_decision(stock)
             elif account.mode == 'run':
                 logging.debug('run algorithm: %s' % stock.algorithm_string)
-                if stock.algorithm_string == 'ahnyung':
-                    decision = alg_ahnyung.trade_decision(stock)
-                elif stock.algorithm_string == 'trend':
+                if stock.algorithm_string == 'trend':
                     decision = alg_trend.trade_decision(stock)
                 elif stock.algorithm_string == 'day_trend':
                     decision = alg_day_trend.trade_decision(stock)
@@ -243,11 +228,6 @@ def run(dt=None, client=None):
 
                 order_id += 1
                 store_trade(stock, dt, decision, trade_failed, stock.get_failure_reason())
-
-            if not trade_failed and account.mode == 'setup':
-                stock.last_buy_price = stock.value
-                stock.last_sell_price = stock.value
-                stock.last_value = stock.value
 
             store_db_stock(db_stock, stock)
 

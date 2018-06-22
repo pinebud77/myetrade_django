@@ -105,7 +105,7 @@ STANCE_CHOICE = (
 )
 
 ALGORITHM_FILL = 0
-ALGORITHM_AHNYUNG = 1
+ALGORITHM_DEPRECATED = 1
 ALGORITHM_EMPTY = 2
 ALGORITHM_TREND = 3
 ALGORITHM_DAY_TREND = 4
@@ -113,7 +113,7 @@ ALGORITHM_OVER_BUY = 5
 ALGORITHM_OVER_SELL = 6
 ALGORITHM_CHOICE = (
     (ALGORITHM_FILL, 'fill'),
-    (ALGORITHM_AHNYUNG, 'ahnyung'),
+    (ALGORITHM_DEPRECATED, '(deprecated)'),
     (ALGORITHM_EMPTY, 'empty'),
     (ALGORITHM_TREND, 'trend'),
     (ALGORITHM_DAY_TREND, 'day_trend'),
@@ -132,15 +132,10 @@ class Stock(models.Model):
     algorithm = models.IntegerField(choices=ALGORITHM_CHOICE)
     stance = models.IntegerField(choices=STANCE_CHOICE)
     count = models.IntegerField(null=True, default=0, blank=True)
-    last_value = models.FloatField(null=True, blank=True)
     last_count = models.FloatField(null=True, blank=True)
-    last_sell_price = models.FloatField(null=True, blank=True)
-    last_buy_price = models.FloatField(null=True, blank=True)
 
     def __str__(self):
-        return '%d: %s - count %d' % (self.account.account_id,
-                                      self.symbol,
-                                      self.count)
+        return '%d: %s - count %d' % (self.account.account_id, self.symbol, self.count)
 
 
 class FailureReason(models.Model):
