@@ -5,6 +5,7 @@ This is personal test for Django + my trading code.
 
 ToDO :
 * think about algorithms now -_-;
+* BUGFIX
 
 Done :
 * running algorithm on real trading or simulation

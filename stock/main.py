@@ -313,14 +313,14 @@ def simulate(start_date=None, end_date=None):
         run(dt=cur_dt, client=client)
         cur_dt += day_delta
         cur_date = date(year=cur_dt.year, month=cur_dt.month, day=cur_dt.day)
-        load_history_simquote(cur_date)
+        load_history_sim(cur_date)
 
     client.logout()
 
     return True
 
 
-def load_history_simquote(cur_date):
+def load_history_sim(cur_date):
     symbol_list = []
 
     for stock in models.Stock.objects.all():
