@@ -65,7 +65,7 @@ def logout_page(request):
     return redirect('/stock/')
 
 
-def reportrange_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
+def report_range_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
     if not request.user.is_authenticated:
         return redirect('/stock/')
 
@@ -146,10 +146,15 @@ def report_page(request):
         return redirect('/stock/')
 
     if request.method == 'POST':
-        start_date = request.POST['start_date']
-        end_date = request.POST['end_date']
+        start_month = int(request.POST['start_date_month'])
+        start_day = int(request.POST['start_date_day'])
+        start_year = int(request.POST['start_date_year'])
+        end_month = int(request.POST['end_date_month'])
+        end_day = int(request.POST['end_date_day'])
+        end_year = int(request.POST['end_date_year'])
 
-        return redirect('/stock/reportrange/%s-%s' % (start_date, end_date))
+        return redirect('/stock/report_range/%4.4d%2.2d%2.2d-%4.4d%2.2d%2.2d' % (start_year, start_month, start_day,
+                                                                                 end_year, end_month, end_day))
     else:
         form = ReportForm()
         return render(request, 'stock/report.html', {'form': form})
@@ -189,10 +194,35 @@ def simulate_page(request):
         return redirect('/stock/')
 
     if request.method == 'POST':
-        start_date = request.POST['start_date']
-        end_date = request.POST['end_date']
+        try:
+            algorithm = int(request.POST['algorithm'])
+        except ValueError:
+            algorithm = None
+        if algorithm is not None:
+            logging.info('algorithm %d' % algorithm)
+            for stock in Stock.objects.all():
+                stock.algorithm = algorithm
+                stock.save()
 
-        return redirect('/stock/run_sim/%s-%s' % (start_date, end_date))
+        try:
+            stance = int(request.POST['stance'])
+        except ValueError:
+            stance = None
+        if stance is not None:
+            logging.info('stance %d' % stance)
+            for stock in Stock.objects.all():
+                stock.stance = stance
+                stock.save()
+
+        start_month = int(request.POST['start_date_month'])
+        start_day = int(request.POST['start_date_day'])
+        start_year = int(request.POST['start_date_year'])
+        end_month = int(request.POST['end_date_month'])
+        end_day = int(request.POST['end_date_day'])
+        end_year = int(request.POST['end_date_year'])
+
+        return redirect('/stock/run_sim/%4.4d%2.2d%2.2d-%4.4d%2.2d%2.2d' % (start_year, start_month, start_day,
+                                                                            end_year, end_month, end_day))
     else:
         form = SimulateForm()
         return render(request, 'stock/simulate.html', {'form': form})
@@ -217,7 +247,7 @@ def run_sim_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
     res = main.simulate(start_date, end_date)
 
     if res:
-        return redirect('/stock/reportrange/%4.4d-%2.2d-%2.2d-%4.4d-%2.2d-%2.2d' %
+        return redirect('/stock/report_range/%4.4d%2.2d%2.2d-%4.4d%2.2d%2.2d' %
                         (start_date.year, start_date.month, start_date.day,
                          end_date.year, end_date.month, end_date.day))
     else:
