@@ -86,9 +86,7 @@ class DayReport(models.Model):
     cash_to_trade = models.FloatField()
 
     def __str__(self):
-        return '%d/%d/%d - %d: net %f (cash %f, equity %f)' % (self.date.month,
-                                                               self.date.day,
-                                                               self.date.year,
+        return '%d/%d/%d - %d: net %f (cash %f, equity %f)' % (self.date.month, self.date.day, self.date.year,
                                                                self.account.account_id,
                                                                self.net_value,
                                                                self.cash_to_trade,

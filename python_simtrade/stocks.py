@@ -33,7 +33,7 @@ class Stock:
         self.last_count = 0
         self.budget = 0.0
         self.algorithm_string = 'ahnyung'
-        self.stance = 1
+        self.stance = 0
         self.valid = True
         self.failure_reason = 'success'
 
@@ -55,6 +55,7 @@ class Stock:
 
     def market_order(self, count, order_id):
         if not self.valid:
+            logging.error('no such stock yet :)')
             return False
         if count < 0 and -count > self.count:
             logging.error('market_order: not enough stock count')
@@ -77,6 +78,7 @@ class Stock:
 
     def get_total_value(self):
         if not self.valid:
+            logging.error('no such stock yet :)')
             return None
         if self.count is None:
             logging.error('get_total_value: count is None')

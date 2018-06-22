@@ -81,14 +81,12 @@ def store_trade(stock, dt, decision, failed, failure_reason):
         reason = reasons[0]
 
     trade = models.Trade()
-
     trade.date = dt
     trade.symbol = stock.symbol
     trade.account_id = stock.account.id
     trade.count = abs(decision)
     trade.price = stock.value
     trade.failure_reason = reason
-
     if decision > 0 and not failed:
         trade.action = models.ACTION_BUY
     elif decision > 0:
@@ -97,7 +95,6 @@ def store_trade(stock, dt, decision, failed, failure_reason):
         trade.action = models.ACTION_SELL
     else:
         trade.action = models.ACTION_SELL_FAIL
-
     trade.save()
 
 
@@ -112,9 +109,8 @@ def get_quotes(client, dt):
         if quote is None:
             continue
         try:
-            prev_quote = models.Quote.objects.filter(symbol=symbol, date__lte=dt).order_by('-date')[0]
-            if prev_quote.date.year == dt.year and prev_quote.date.month == dt.month and prev_quote.date.day == dt.day:
-                prev_quote.delete()
+            prev_quote = models.Quote.objects.filter(symbol=symbol, date=dt).order_by('-date')[0]
+            prev_quote.delete()
         except IndexError:
             pass
 
@@ -129,7 +125,7 @@ def get_order_id():
     order_ids = models.OrderID.objects.all()
     if not order_ids:
         order_id_obj = models.OrderID()
-        order_id_obj.order_id = 200
+        order_id_obj.order_id = 500
         order_id_obj.save()
         order_ids = models.OrderID.objects.all()
 
@@ -162,6 +158,7 @@ def run(dt=None, client=None):
     need_logout = False
     if client is None:
         if etrade_consumer_key is None:
+            logging.error('no key defined')
             return False
         client = etclient.Client()
         result = client.login(etrade_consumer_key,
@@ -303,12 +300,14 @@ def simulate(start_date=None, end_date=None):
     client.login(cur_dt)
     while cur_dt < last_dt:
         if cur_dt.weekday() == 5 or cur_dt.weekday() == 6:
+            logging.info('skipping sim: Saturday or Sunday')
             cur_dt += day_delta
             continue
         if cur_dt in us_holidays:
+            logging.info('skipping sim: US holiday')
             cur_dt += day_delta
             continue
-        print('running: ' + str(cur_dt))
+        print('running sim: ' + str(cur_dt))
         client.update(cur_dt)
         run(dt=cur_dt, client=client)
         cur_dt += day_delta

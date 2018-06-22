@@ -5,13 +5,14 @@ This is personal test for Django + my trading code.
 
 ToDO :
 * think about algorithms now -_-;
-* BUGFIX
+* bugfix : there are plenty of bugs yet..
 
 Done :
 * running algorithm on real trading or simulation
 * several dummy algorithms (of no practical use)
 
 Installation :
+1. Required libraries(not clear now) : django, request, request_oauth, holidays, fake_useragent
 1. generate your own /myetrade_djnago/settings.py : you can refer setting.py.sample
 1. $ git clone https://github.com/pinebud77/python_etrade.git
 1. create /stock/config.py file for the account (no need if simulation only)
@@ -42,7 +43,6 @@ Getting Performance Report after simulation or running the actual :
 1. input desired date range for the report
 1. click submit and the .csv file will be downloaded
 1. example report : monkey is the best !!!<br>
-ahnyung alg : https://docs.google.com/spreadsheets/d/1miU30kcAunXzcTWiENtOqByShoXa4KNWKlxZHGRO9to/edit?usp=sharing (huh.. the return is -_-;;)<br>
 monkey alg : https://docs.google.com/spreadsheets/d/1Qjo-xpnwApTDFgzEqWoiqVfLXRb1B38BnB0JVpfJeEk/edit?usp=sharing (random buy sell)<br>
 trend alg : https://docs.google.com/spreadsheets/d/1mFiiBiKs-IKIHVxng5LP2pLywZSYVNAtqFDZrILjGZ4/edit?usp=sharing
 

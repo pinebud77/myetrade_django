@@ -1,0 +1,4 @@
+http://quotes.wsj.com/MSFT/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=06/21/2018
+http://quotes.wsj.com/GOOGL/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=06/21/2018
+http://quotes.wsj.com/AAPL/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=06/21/2018
+http://quotes.wsj.com/AMZN/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=06/21/2018

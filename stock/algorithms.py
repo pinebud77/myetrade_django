@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-
 import logging
 import pickle
 from . import models
-from os.path import realpath, dirname
+from os.path import realpath, dirname, join
 from random import random
 
 
-TREND_CONFIG = dirname(realpath(__file__)) + '/trend_alg_config.pickle'
+TREND_CONFIG = join(dirname(realpath(__file__)),'trend_alg_config.pickle')
 
 
 CONSERVATIVE = 0
@@ -29,9 +28,9 @@ class TradeAlgorithm:
 
 
 trend_variables = [
-    {'up_count': 3, 'down_count': 4, 'pause_count': 7},  # conservative
-    {'up_count': 2, 'down_count': 3, 'pause_count': 6},  # moderate
-    {'up_count': 2, 'down_count': 2, 'pause_count': 5},  # aggressive
+    {'up_count': 3, 'down_count': 4, 'pause_count': 5},  # conservative
+    {'up_count': 2, 'down_count': 3, 'pause_count': 4},  # moderate
+    {'up_count': 2, 'down_count': 2, 'pause_count': 3},  # aggressive
 ]
 MIN_HISTORY = 10
 
@@ -53,6 +52,7 @@ class TrendAlgorithm(TradeAlgorithm):
 
         quotes = models.Quote.objects.filter(symbol=stock.symbol, date__lte=self.dt).order_by('-date')[:MIN_HISTORY]
         if len(quotes) < MIN_HISTORY:
+            logging.info('wait until enough history is there')
             return 0
 
         keep_up = 0
@@ -96,10 +96,14 @@ class TrendAlgorithm(TradeAlgorithm):
 
 class MonkeyAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
-        if not stock.count and random() % 20 > 15:
+        logging.debug('kikikik')
+        val = random() % 20
+        if not stock.count and val > 15:
+            logging.debug('buy all')
             return buy_all(stock)
 
-        if stock.count and random() % 20 > 15:
+        if stock.count and val > 15:
+            logging.debug('sell all')
             return -stock.count
 
         return 0
@@ -109,6 +113,7 @@ class FillAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
         total_value = stock.get_total_value()
         if total_value is None:
+            logging.error('huh total value of stock is None : symbol %s' % stock.symbol)
             return 0
         overflow = total_value - stock.budget
 
@@ -125,9 +130,9 @@ class EmptyAlgorithm(TradeAlgorithm):
 
 class OverBuyAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
-        return 10000000000
+        return 100000
 
 
 class OverSellAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
-        return -10000000000
+        return -100000

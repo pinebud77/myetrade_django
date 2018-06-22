@@ -2,15 +2,16 @@ import json
 import logging
 from .accounts import Account
 from .stocks import Stock, Quote
-from os.path import dirname, realpath
+from os.path import dirname, realpath, join
 
 
-SIM_CONFIG_FILE = dirname(realpath(__file__)) + '/sim_config.json'
+SIM_CONFIG_FILE = join(dirname(realpath(__file__)), 'sim_config.json')
+SIM_INITIAL_VALUE = 100000.0
 
 
 def reset_sim_config():
     config = dict()
-    config['accounts'] = [{'id': 0, 'cash_to_trade': 100000.0, 'stocks':[]}]
+    config['accounts'] = [{'id': 0, 'cash_to_trade': SIM_INITIAL_VALUE, 'stocks': []}]
 
     with open(SIM_CONFIG_FILE, 'w') as outfile:
         json.dump(config, outfile, indent=2, sort_keys=False)
@@ -56,6 +57,7 @@ class Client:
         for account_id in self.account_dict:
             account = self.account_dict[account_id]
             account.update(dt)
+        return True
 
     def renew_connection(self):
         return True
@@ -85,8 +87,8 @@ class Client:
             json.dump(self.config, outfile, indent=2, sort_keys=False)
         return True
 
-    def get_account(self, id):
-        return self.account_dict[id]
+    def get_account(self, account_id):
+        return self.account_dict[account_id]
 
     def get_quote(self, symbol):
         quote = Quote(symbol)
