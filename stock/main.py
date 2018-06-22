@@ -250,7 +250,7 @@ def run(dt=None, client=None):
 
 
 def simulate(start_date=None, end_date=None):
-    logging.basicConfig(level=logging.DEBUG)
+    #logging.basicConfig(level=logging.DEBUG)
 
     models.Trade.objects.all().delete()
     models.Quote.objects.all().delete()
