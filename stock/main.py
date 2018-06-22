@@ -5,7 +5,7 @@ import csv
 import io
 import urllib
 from . import models
-from .algorithms import FillAlgorithm, TrendAlgorithm, OverBuyAlgorithm, OverSellAlgorithm
+from .algorithms import FillAlgorithm, TrendAlgorithm, OverBuyAlgorithm, OverSellAlgorithm, MonkeyAlgorithm
 from datetime import date, datetime, timedelta
 from django.db import transaction
 import python_etrade.client as etclient
@@ -150,6 +150,7 @@ alg_trend = TrendAlgorithm(None)
 alg_day_trend = DayTrendAlgorithm(None)
 alg_over_buy = OverBuyAlgorithm()
 alg_over_sell = OverSellAlgorithm()
+alg_monkey = MonkeyAlgorithm()
 
 
 @transaction.atomic
@@ -213,6 +214,8 @@ def run(dt=None, client=None):
                     decision = alg_over_buy.trade_decision(stock)
                 elif stock.algorithm_string == 'over_sell':
                     decision = alg_over_sell.trade_decision(stock)
+                elif stock.algorithm_string == 'monkey':
+                    decision = alg_monkey.trade_decision(stock)
 
             logging.debug('decision=%d' % decision)
 
@@ -247,7 +250,7 @@ def run(dt=None, client=None):
 
 
 def simulate(start_date=None, end_date=None):
-    #logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
 
     models.Trade.objects.all().delete()
     models.Quote.objects.all().delete()

@@ -4,6 +4,7 @@ import logging
 import pickle
 from . import models
 from os.path import realpath, dirname
+from random import random
 
 
 TREND_CONFIG = dirname(realpath(__file__)) + '/trend_alg_config.pickle'
@@ -88,6 +89,17 @@ class TrendAlgorithm(TradeAlgorithm):
 
         if keep_down >= down_count:
             logging.debug('%s: sell %d' % (stock.symbol, stock.count))
+            return -stock.count
+
+        return 0
+
+
+class MonkeyAlgorithm(TradeAlgorithm):
+    def trade_decision(self, stock):
+        if not stock.count and random() % 20 > 15:
+            return buy_all(stock)
+
+        if stock.count and random() % 20 > 15:
             return -stock.count
 
         return 0

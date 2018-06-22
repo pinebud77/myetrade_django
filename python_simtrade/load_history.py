@@ -81,8 +81,10 @@ def load_data():
     SimHistory.objects.all().delete()
 
     symbols = get_symbol_list()
+    #sleep(2)
 
     for symbol in symbols:
-        load_web(symbol)
-        sleep(3)
-        #load_csv(symbol)
+        logging.info(symbol)
+        #load_web(symbol)
+        #sleep(2)
+        load_csv(symbol)
