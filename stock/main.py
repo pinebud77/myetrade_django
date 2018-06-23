@@ -23,7 +23,7 @@ try:
 except ModuleNotFoundError:
     from .algorithms import TrendAlgorithm as DayTrendAlgorithm
 
-LOG_FORMAT = '%(asctime)-15s %(message)s'
+logger = logging.getLogger('main_loop')
 MIN_HISTORY_DAYS = 20
 
 
@@ -155,14 +155,13 @@ alg_trend_trend = TrendTrendAlgorithm()
 
 @transaction.atomic
 def run(dt=None, client=None):
-    #logging.basicConfig(level=logging.DEBUG)
     if dt is None:
         dt = timezone.now()
 
     need_logout = False
     if client is None:
         if etrade_consumer_key is None:
-            logging.error('no key defined')
+            logger.error('no key defined')
             return False
         client = etclient.Client()
         result = client.login(etrade_consumer_key,
@@ -170,9 +169,9 @@ def run(dt=None, client=None):
                               etrade_username,
                               etrade_passwd)
         if not result:
-            logging.error('login failed')
+            logger.error('login failed')
             return False
-        logging.debug('logged in')
+        logger.debug('logged in')
         need_logout = True
 
     store_quotes(client, dt)
@@ -181,11 +180,11 @@ def run(dt=None, client=None):
     for db_account in models.Account.objects.all():
         account = client.get_account(db_account.account_id)
         if account is None:
-            logging.error('getting account failed: wrong account_id?')
+            logger.error('getting account failed: wrong account_id?')
             continue
         load_db_account(db_account, account)
 
-        logging.debug('account id:%d mode: %s' % (account.id, account.mode))
+        logger.debug('account id:%d mode: %s' % (account.id, account.mode))
 
         trade_failed = False
         for db_stock in models.Stock.objects.filter(account=db_account):
@@ -193,17 +192,17 @@ def run(dt=None, client=None):
             if not stock:
                 stock = account.new_stock(db_stock.symbol)
             if stock is None:
-                logging.error('new stock is None %s' % db_stock.symbol)
+                logger.error('new stock is None %s' % db_stock.symbol)
                 continue
 
             load_db_stock(db_stock, stock)
 
             decision = 0
             if account.mode == 'setup':
-                logging.debug('run algorithm: fill')
+                logger.debug('run algorithm: fill')
                 decision = alg_fill.trade_decision(stock)
             elif account.mode == 'run':
-                logging.debug('run algorithm: %s' % stock.algorithm_string)
+                logger.debug('run algorithm: %s' % stock.algorithm_string)
                 if stock.algorithm_string == 'trend':
                     decision = alg_trend.trade_decision(stock)
                 elif stock.algorithm_string == 'day_trend':
@@ -217,7 +216,7 @@ def run(dt=None, client=None):
                 elif stock.algorithm_string == 'trend_trend':
                     decision = alg_trend_trend.trade_decision(stock)
 
-            logging.debug('decision=%d' % decision)
+            logger.debug('decision=%d' % decision)
 
             if decision != 0:
                 stock.last_count = stock.count
@@ -244,14 +243,12 @@ def run(dt=None, client=None):
 
     if need_logout:
         client.logout()
-        logging.debug('logged out')
+        logger.debug('logged out')
 
     return True
 
 
 def simulate(start_date=None, end_date=None):
-    logging.basicConfig(level=logging.DEBUG)
-
     models.Order.objects.all().delete()
     models.Quote.objects.all().delete()
     models.DayReport.objects.all().delete()
@@ -295,14 +292,14 @@ def simulate(start_date=None, end_date=None):
     client.login(cur_dt)
     while cur_dt <= last_dt:
         if cur_dt.weekday() == 5 or cur_dt.weekday() == 6:
-            logging.info('skipping sim: Saturday or Sunday')
+            logger.info('skipping sim: Saturday or Sunday')
             cur_dt += day_delta
             continue
         if cur_dt in us_holidays:
-            logging.info('skipping sim: US holiday')
+            logger.info('skipping sim: US holiday')
             cur_dt += day_delta
             continue
-        print('running sim: ' + str(cur_dt))
+        logger.info('running sim: ' + str(cur_dt))
         client.update(cur_dt)
         run(dt=cur_dt, client=client)
         load_history_sim(cur_dt.date())

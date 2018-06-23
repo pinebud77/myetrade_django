@@ -6,6 +6,7 @@ from os.path import realpath, dirname, join
 from random import random
 
 
+logger = logging.getLogger('algorithms')
 TREND_CONFIG = join(dirname(realpath(__file__)),'trend_alg_config.pickle')
 
 
@@ -48,7 +49,7 @@ class TrendAlgorithm(TradeAlgorithm):
 
         histories = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')[:MIN_HISTORY]
         if len(histories) < MIN_HISTORY:
-            logging.info('wait until enough history is there')
+            logger.info('wait until enough history is there')
             return 0
 
         keep_up = 0
@@ -61,17 +62,17 @@ class TrendAlgorithm(TradeAlgorithm):
             if histories[n].close > histories[n+1].close:
                 break
             keep_down += 1
-        logging.debug('%s: keep_up %d keep_down %d' % (stock.symbol, keep_up, keep_down))
+        logger.debug('%s: keep_up %d keep_down %d' % (stock.symbol, keep_up, keep_down))
 
         if keep_down >= pause_count:
             pause_dict[stock.symbol] = pause_count
             pickle.dump(pause_dict, open(TREND_CONFIG, 'wb'))
-            logging.debug('%s: put in pause_dict' % stock.symbol)
+            logger.debug('%s: put in pause_dict' % stock.symbol)
             return -stock.count
 
         if not stock.count:
             if stock.symbol in pause_dict:
-                logging.debug('%s: in pause_dict %d remain' % (stock.symbol, pause_dict[stock.symbol] - 1))
+                logger.debug('%s: in pause_dict %d remain' % (stock.symbol, pause_dict[stock.symbol] - 1))
                 pause_dict[stock.symbol] -= 1
                 if pause_dict[stock.symbol] == 0:
                     del pause_dict[stock.symbol]
@@ -79,12 +80,12 @@ class TrendAlgorithm(TradeAlgorithm):
                 return 0
             if keep_up >= up_count:
                 count = buy_all(stock)
-                logging.debug('%s: buy %d' % (stock.symbol, count))
+                logger.debug('%s: buy %d' % (stock.symbol, count))
                 return count
             return 0
 
         if keep_down >= down_count:
-            logging.debug('%s: sell %d' % (stock.symbol, stock.count))
+            logger.debug('%s: sell %d' % (stock.symbol, stock.count))
             return -stock.count
 
         return 0
@@ -92,14 +93,14 @@ class TrendAlgorithm(TradeAlgorithm):
 
 class MonkeyAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
-        logging.debug('kikikik')
+        logger.debug('kikikik')
         val = random() % 20
         if not stock.count and val > 15:
-            logging.debug('buy all')
+            logger.debug('buy all')
             return buy_all(stock)
 
         if stock.count and val > 15:
-            logging.debug('sell all')
+            logger.debug('sell all')
             return -stock.count
 
         return 0
@@ -109,12 +110,12 @@ class FillAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
         total_value = stock.get_total_value()
         if total_value is None:
-            logging.error('huh total value of stock is None : symbol %s' % stock.symbol)
+            logger.error('huh total value of stock is None : symbol %s' % stock.symbol)
             return 0
         overflow = total_value - stock.budget
 
-        logging.debug('fill: total_value - %f' % total_value)
-        logging.debug('fill: overflow - %f' % overflow)
+        logger.debug('fill: total_value - %f' % total_value)
+        logger.debug('fill: overflow - %f' % overflow)
 
         return -int(overflow / stock.value)
 
