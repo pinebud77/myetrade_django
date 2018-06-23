@@ -155,7 +155,7 @@ alg_trend_trend = TrendTrendAlgorithm()
 
 @transaction.atomic
 def run(dt=None, client=None):
-    logging.basicConfig(level=logging.DEBUG)
+    #logging.basicConfig(level=logging.DEBUG)
     if dt is None:
         dt = timezone.now()
 
