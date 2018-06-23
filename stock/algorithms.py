@@ -36,10 +36,6 @@ MIN_HISTORY = 10
 
 
 class TrendAlgorithm(TradeAlgorithm):
-    def __init__(self, dt):
-        super(TrendAlgorithm, self).__init__()
-        self.dt = dt
-
     def trade_decision(self, stock):
         try:
             pause_dict = pickle.load(open(TREND_CONFIG, 'rb'))
@@ -50,7 +46,7 @@ class TrendAlgorithm(TradeAlgorithm):
         down_count = trend_variables[stock.stance]['down_count']
         pause_count = trend_variables[stock.stance]['pause_count']
 
-        histories = models.DayHistory.objects.filter(symbol=stock.symbol, date__lt=self.dt.date()).order_by('-date')[:MIN_HISTORY]
+        histories = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')[:MIN_HISTORY]
         if len(histories) < MIN_HISTORY:
             logging.info('wait until enough history is there')
             return 0
@@ -126,13 +122,3 @@ class FillAlgorithm(TradeAlgorithm):
 class EmptyAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
         return -stock.count
-
-
-class OverBuyAlgorithm(TradeAlgorithm):
-    def trade_decision(self, stock):
-        return 100000
-
-
-class OverSellAlgorithm(TradeAlgorithm):
-    def trade_decision(self, stock):
-        return -100000

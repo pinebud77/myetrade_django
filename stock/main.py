@@ -5,7 +5,7 @@ import csv
 import io
 import urllib
 from . import models
-from .algorithms import FillAlgorithm, TrendAlgorithm, OverBuyAlgorithm, OverSellAlgorithm
+from .algorithms import FillAlgorithm, TrendAlgorithm
 from .algorithms import MonkeyAlgorithm, EmptyAlgorithm
 from django.utils import timezone
 from django.db import transaction
@@ -19,11 +19,12 @@ except ModuleNotFoundError:
     pass
 
 try:
-    from .private_algorithms import DayTrendAlgorithm
+    from .private_algorithms import DayTrendAlgorithm, OpenCloseAlgorithm, TrendTrendAlgorithm
 except ModuleNotFoundError:
     from .algorithms import TrendAlgorithm as DayTrendAlgorithm
 
 LOG_FORMAT = '%(asctime)-15s %(message)s'
+MIN_HISTORY_DAYS = 20
 
 
 def load_db_account(db_account, account):
@@ -145,16 +146,16 @@ def store_order_id(order_id):
 
 alg_fill = FillAlgorithm()
 alg_empty = EmptyAlgorithm()
-alg_trend = TrendAlgorithm(None)
-alg_day_trend = DayTrendAlgorithm(None)
-alg_over_buy = OverBuyAlgorithm()
-alg_over_sell = OverSellAlgorithm()
+alg_trend = TrendAlgorithm()
+alg_day_trend = DayTrendAlgorithm()
 alg_monkey = MonkeyAlgorithm()
+alg_open_close = OpenCloseAlgorithm()
+alg_trend_trend = TrendTrendAlgorithm()
 
 
 @transaction.atomic
 def run(dt=None, client=None):
-    #logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
     if dt is None:
         dt = timezone.now()
 
@@ -173,9 +174,6 @@ def run(dt=None, client=None):
             return False
         logging.debug('logged in')
         need_logout = True
-
-    alg_trend.dt = dt
-    alg_day_trend.dt = dt
 
     store_quotes(client, dt)
     order_id = get_order_id()
@@ -210,14 +208,14 @@ def run(dt=None, client=None):
                     decision = alg_trend.trade_decision(stock)
                 elif stock.algorithm_string == 'day_trend':
                     decision = alg_day_trend.trade_decision(stock)
-                elif stock.algorithm_string == 'over_buy':
-                    decision = alg_over_buy.trade_decision(stock)
-                elif stock.algorithm_string == 'over_sell':
-                    decision = alg_over_sell.trade_decision(stock)
                 elif stock.algorithm_string == 'monkey':
                     decision = alg_monkey.trade_decision(stock)
                 elif stock.algorithm_string == 'empty':
                     decision = alg_empty.trade_decision(stock)
+                elif stock.algorithm_string == 'open_close':
+                    decision = alg_open_close.trade_decision(stock)
+                elif stock.algorithm_string == 'trend_trend':
+                    decision = alg_trend_trend.trade_decision(stock)
 
             logging.debug('decision=%d' % decision)
 
@@ -252,7 +250,7 @@ def run(dt=None, client=None):
 
 
 def simulate(start_date=None, end_date=None):
-    #logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
 
     models.Order.objects.all().delete()
     models.Quote.objects.all().delete()
@@ -323,21 +321,26 @@ def load_history_sim(cur_date):
             symbol_list.append(str(stock.symbol))
 
     for symbol in symbol_list:
-        try:
-            sim_history = models.SimHistory.objects.filter(symbol=symbol, date__lte=cur_date).order_by('-date')[0]
-        except IndexError:
-            logging.error('no history in sim loading')
+        sim_histories = models.SimHistory.objects.filter(symbol=symbol, date__lte=cur_date).order_by('-date')[:MIN_HISTORY_DAYS]
+        if len(sim_histories) == 0:
             continue
 
-        day_history = models.DayHistory()
-        day_history.symbol = sim_history.symbol
-        day_history.date = cur_date
-        day_history.open = sim_history.open
-        day_history.high = sim_history.high
-        day_history.low = sim_history.low
-        day_history.close = sim_history.close
-        day_history.volume = sim_history.volume
-        day_history.save()
+        for sim_history in sim_histories:
+            try:
+                prev_history = models.DayHistory.objects.filter(symbol=symbol, date=sim_history.date)[0]
+                break
+            except IndexError:
+                pass
+
+            day_history = models.DayHistory()
+            day_history.symbol = sim_history.symbol
+            day_history.date = sim_history.date
+            day_history.open = sim_history.open
+            day_history.high = sim_history.high
+            day_history.low = sim_history.low
+            day_history.close = sim_history.close
+            day_history.volume = sim_history.volume
+            day_history.save()
 
 
 def load_history_wsj(today):
@@ -354,7 +357,7 @@ def load_history_wsj(today):
         except IndexError:
             pass
 
-    td = timezone.timedelta(20)
+    td = timezone.timedelta(MIN_HISTORY_DAYS)
     start_date = today - td
 
     for symbol in symbol_list:
