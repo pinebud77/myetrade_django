@@ -4,6 +4,7 @@ Django-based MyEtrade
 This is personal test for Django + my trading code.
 
 ToDO :
+* use timezone
 * think about algorithms now -_-;
 * bugfix : there are plenty of bugs yet..
 
@@ -14,6 +15,7 @@ Done :
 Installation :
 1. Required libraries(not clear now) : django, request, request_oauth, holidays, fake_useragent
 1. generate your own /myetrade_djnago/settings.py : you can refer setting.py.sample
+1. $ cd myetrade_django
 1. $ git clone https://github.com/pinebud77/python_etrade.git
 1. create /stock/config.py file for the account (no need if simulation only)
 1. $ python3 manage.py migrate

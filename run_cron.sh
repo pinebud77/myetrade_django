@@ -9,4 +9,4 @@ fi
 
 
 cd ${DJANGO_BASE}/logs
-wget -q --no-check-certificate -O run https://127.0.0.1/stock/run
+wget -q --no-check-certificate -O ${1} https://127.0.0.1/stock/${1}

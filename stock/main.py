@@ -397,3 +397,4 @@ def load_history_wsj(today):
             day_history.volume = int(row[5])
             day_history.save()
 
+    return True

@@ -180,8 +180,26 @@ def run_page(request):
     if ip != '127.0.0.1':
         return render(request, 'stock/error.txt', {})
 
-    main.load_history_wsj(date.today())
     result = main.run()
+
+    if result:
+        return render(request, 'stock/success.txt', {})
+    else:
+        return render(request, 'stock/error.txt', {})
+
+
+@csrf_exempt
+def get_history_page(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+
+    if ip != '127.0.0.1':
+        return render(request, 'stock/error.txt', {})
+
+    result = main.load_history_wsj(date.today())
 
     if result:
         return render(request, 'stock/success.txt', {})
