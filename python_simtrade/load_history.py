@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
-
-
 import csv
 import urllib
 import io
 import logging
 from os.path import join, realpath, dirname
 from stock.models import SimHistory, Stock
-from datetime import date
+from django.utils import timezone
 from django.db import transaction
-from time import sleep
 
 
 DATA_PATH = dirname(realpath(__file__)) + '/market_history'
@@ -38,7 +35,7 @@ def load_csv(symbol):
             history.symbol = symbol
 
             dates = row[0].split('/')
-            history.date = date(year=int(dates[2])+2000, month=int(dates[0]), day=int(dates[1]))
+            history.date = timezone.datetime(year=int(dates[2]) + 2000, month=int(dates[0]), day=int(dates[1])).date()
             history.open = float(row[1])
             history.high = float(row[2])
             history.low = float(row[3])
@@ -51,12 +48,12 @@ def load_csv(symbol):
 
 @transaction.atomic
 def load_web(symbol):
-    today = date.today()
-    start_date = date(year=2002, month=1, day=1)
+    today = timezone.datetime.now().today()
+    start_dt = timezone.datetime(year=2002, month=1, day=1)
     url = 'http://quotes.wsj.com/%s/historical-prices/download?MOD_VIEW=page&' \
           'num_rows=1000000&range_days=1000000&endDate=%2.2d/%2.2d/%4.4d&' \
           'startDate=%2.2d/%2.2d/%4.4d'\
-          % (symbol, today.month, today.day, today.year, start_date.month, start_date.day, start_date.year)
+          % (symbol, today.month, today.day, today.year, start_dt.month, start_dt.day, start_dt.year)
     page = urllib.request.urlopen(url, None, 100000)
     reader = csv.reader(io.TextIOWrapper(page))
 
@@ -64,11 +61,11 @@ def load_web(symbol):
         if row[0] == 'Date':
             continue
         dates = row[0].split('/')
-        t_date = date(year=int(dates[2]) + 2000, month=int(dates[0]), day=int(dates[1]))
+        t_dt = timezone.datetime(year=int(dates[2]) + 2000, month=int(dates[0]), day=int(dates[1]))
 
         day_history = SimHistory()
         day_history.symbol = symbol
-        day_history.date = t_date
+        day_history.date = t_dt.date()
         day_history.open = float(row[1])
         day_history.high = float(row[2])
         day_history.low = float(row[3])

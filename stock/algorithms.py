@@ -4,7 +4,6 @@ import pickle
 from . import models
 from os.path import realpath, dirname, join
 from random import random
-from datetime import date
 
 
 TREND_CONFIG = join(dirname(realpath(__file__)),'trend_alg_config.pickle')
@@ -51,9 +50,7 @@ class TrendAlgorithm(TradeAlgorithm):
         down_count = trend_variables[stock.stance]['down_count']
         pause_count = trend_variables[stock.stance]['pause_count']
 
-        t_date = date(year=self.dt.year, month=self.dt.month, day=self.dt.day)
-
-        histories = models.DayHistory.objects.filter(symbol=stock.symbol, date__lt=t_date).order_by('-date')[:MIN_HISTORY]
+        histories = models.DayHistory.objects.filter(symbol=stock.symbol, date__lt=self.dt.date()).order_by('-date')[:MIN_HISTORY]
         if len(histories) < MIN_HISTORY:
             logging.info('wait until enough history is there')
             return 0

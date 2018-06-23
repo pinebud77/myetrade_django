@@ -10,7 +10,7 @@ from django.shortcuts import render_to_response, redirect
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from datetime import datetime, date
+from django.utils import timezone
 from os.path import realpath, dirname
 
 CUR_DIR = dirname(realpath(__file__))
@@ -69,8 +69,8 @@ def report_range_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
     if not request.user.is_authenticated:
         return redirect('/stock/')
 
-    start_dt = date(year=int(s_year), month=int(s_month), day=int(s_day))
-    end_dt = date(year=int(e_year), month=int(e_month), day=int(e_day))
+    start_dt = timezone.datetime(year=int(s_year), month=int(s_month), day=int(s_day))
+    end_dt = timezone.datetime(year=int(e_year), month=int(e_month), day=int(e_day))
 
     report_list = []
 
@@ -86,7 +86,7 @@ def report_range_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
 
     prev_line = (0.0, ) * (1 + len(account_id_list) + len(symbol_list))
     base_values = [0.0, ] * (len(account_id_list) + len(symbol_list))
-    for day_report in DayReport.objects.filter(date__gte=start_dt, date__lte=end_dt).order_by('date'):
+    for day_report in DayReport.objects.filter(date__gte=start_dt.date(), date__lte=end_dt.date()).order_by('date'):
         line = list()
         line.append('%d/%d/%d' % (day_report.date.month, day_report.date.day, day_report.date.year))
         col = 1
@@ -94,7 +94,7 @@ def report_range_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
             if account_id == day_report.account_id:
                 val = float(day_report.net_value)
             else:
-                val = prev_line[col]
+                val = prev_line[col] * base_values[col - 1]
             if base_values[col - 1] == 0.0 and val != 1.0:
                 base_values[col - 1] = val
             if base_values[col - 1]:
@@ -103,16 +103,16 @@ def report_range_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
                 line.append(1.0)
             col += 1
         for symbol in symbol_list:
-            quote_date = datetime(year=day_report.date.year, month=day_report.date.month, day=day_report.date.day,
-                                  hour=12, minute=59, second=59)
             try:
-                quote = Quote.objects.filter(symbol=symbol, date__lte=quote_date).order_by('-date')[0]
-                val = float(quote.price)
+                history = DayHistory.objects.filter(symbol=symbol, date=day_report.date)[0]
+                val = float(history.close)
             except IndexError:
-                val = prev_line[col]
+                val = None
             if base_values[col - 1] == 0.0 and val != 1.0:
                 base_values[col - 1] = val
-            if base_values[col - 1]:
+            if val is None:
+                line.append('')
+            elif base_values[col - 1]:
                 line.append(val / base_values[col - 1])
             else:
                 line.append(1.0)
@@ -199,7 +199,7 @@ def get_history_page(request):
     if ip != '127.0.0.1':
         return render(request, 'stock/error.txt', {})
 
-    result = main.load_history_wsj(date.today())
+    result = main.load_history_wsj(timezone.now().date())
 
     if result:
         return render(request, 'stock/success.txt', {})
@@ -250,7 +250,7 @@ def test_page(request):
     if not request.user.is_authenticated:
         return redirect('/stock/')
 
-    main.load_history_wsj(date.today())
+    main.load_history_wsj(timezone.now().date())
 
     return render(request, 'stock/success.txt', {})
 
@@ -259,15 +259,15 @@ def run_sim_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
     if not request.user.is_authenticated:
         return redirect('/stock/')
 
-    start_date = date(year=int(s_year), month=int(s_month), day=int(s_day))
-    end_date = date(year=int(e_year), month=int(e_month), day=int(e_day))
+    start_dt = timezone.datetime(year=int(s_year), month=int(s_month), day=int(s_day))
+    end_dt = timezone.datetime(year=int(e_year), month=int(e_month), day=int(e_day))
 
-    res = main.simulate(start_date, end_date)
+    res = main.simulate(start_dt.date(), end_dt.date())
 
     if res:
         return redirect('/stock/report_range/%4.4d%2.2d%2.2d-%4.4d%2.2d%2.2d' %
-                        (start_date.year, start_date.month, start_date.day,
-                         end_date.year, end_date.month, end_date.day))
+                        (start_dt.year, start_dt.month, start_dt.day,
+                         end_dt.year, end_dt.month, end_dt.day))
     else:
         return render(request, 'stock/error.txt', {})
 

@@ -2,9 +2,9 @@ from django.contrib import admin
 from .models import *
 
 
-class TradeAdmin(admin.ModelAdmin):
-    fields = ['date', 'account_id', 'symbol', 'action', 'price']
-    ordering = ('-date',)
+class OrderAdmin(admin.ModelAdmin):
+    fields = ['dt', 'account_id', 'symbol', 'action', 'ask']
+    ordering = ('-dt',)
 
 
 class StockInline(admin.TabularInline):
@@ -36,5 +36,5 @@ admin.site.register(Stock)
 admin.site.register(DayHistory, DayHistoryAdmin)
 admin.site.register(SimHistory, SimHistoryAdmin)
 admin.site.register(Account, AccountAdmin)
-admin.site.register(Trade, TradeAdmin)
+admin.site.register(Order, OrderAdmin)
 admin.site.register(DayReport, DayReportAdmin)

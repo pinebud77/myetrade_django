@@ -3,14 +3,15 @@ from django.db import models
 
 class Quote(models.Model):
     class Meta:
-        unique_together = (('symbol', 'date'),)
+        unique_together = (('symbol', 'dt'),)
 
     symbol = models.CharField(max_length=10)
-    date = models.DateTimeField('date of quote')
-    price = models.FloatField('price of the symbol at the time')
+    dt = models.DateTimeField('date of quote')
+    ask = models.FloatField('ask of the symbol at the time')
+    bid = models.FloatField('bid of the symbol at the time')
 
     def __str__(self):
-        return '%d/%d/%d: %s - %f' % (self.date.month, self.date.day, self.date.year, self.symbol, self.price)
+        return '%s: %s - ask %f bid %f' % (str(self.dt), self.symbol, self.ask, self.bid)
 
 
 class DayHistory(models.Model):
@@ -35,7 +36,7 @@ class SimHistory(models.Model):
     class Meta:
         unique_together = (('symbol', 'date'),)
 
-    date = models.DateTimeField('date of quote')
+    date = models.DateField('date of quote')
     symbol = models.CharField(max_length=10)
     open = models.FloatField('open of the symbol at the time')
     high = models.FloatField('high of the symbol at the time')
@@ -157,13 +158,13 @@ ACTION_CHOICE = (
 )
 
 
-class Trade(models.Model):
+class Order(models.Model):
     class Meta:
-        unique_together = (('account_id', 'symbol', 'date'),)
+        unique_together = (('account_id', 'symbol', 'dt'),)
 
     account_id = models.IntegerField()
     symbol = models.CharField(max_length=10)
-    date = models.DateTimeField('trade date')
+    dt = models.DateTimeField('order date')
     price = models.FloatField()
     count = models.IntegerField()
     action = models.IntegerField(choices=ACTION_CHOICE)
@@ -174,14 +175,8 @@ class Trade(models.Model):
         for en in ACTION_CHOICE:
             if en[0] == self.action:
                 action_string = en[1]
-        return '%d/%d/%d - %d: %s %s %f %s' % (self.date.month,
-                                               self.date.day,
-                                               self.date.year,
-                                               self.account_id,
-                                               self.symbol,
-                                               action_string,
-                                               self.price * self.count,
-                                               self.failure_reason.message)
+        return '%s - %d: %s %s %f %s' % (str(self.dt), self.account_id, self.symbol, action_string,
+                                         self.price * self.count, self.failure_reason.message)
 
 
 class OrderID(models.Model):

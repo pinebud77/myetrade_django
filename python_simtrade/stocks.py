@@ -1,4 +1,4 @@
-from datetime import date
+from django.utils import timezone
 import stock.models as models
 import logging
 
@@ -10,17 +10,20 @@ class Quote:
     def __init__(self, symbol):
         self.symbol = symbol
         self.ask = None
+        self.bid = None
 
     def update(self, cur_time):
-        cd = date(year=cur_time.year, month=cur_time.month, day=cur_time.day)
         try:
-            history = models.SimHistory.objects.filter(symbol=self.symbol, date__lte=cd).order_by('-date')[0]
+            history = models.SimHistory.objects.filter(symbol=self.symbol, date__lte=cur_time.date()).order_by('-date')[0]
         except IndexError:
             return False
         self.ask = history.open
+        self.bid = history.open
 
         logging.debug('quote: %s' % self.symbol)
-        logging.debug('price: %f' % self.ask)
+        logging.debug('ask: %f' % self.ask)
+        logging.debug('bid: %f' % self.bid)
+
         return True
 
 
@@ -43,10 +46,10 @@ class Stock:
         if not res:
             self.valid = False
             return False
-        self.value = quote.ask
+        self.value = (quote.ask + quote.bid) / 2
         logging.debug('\nupdating stock')
         logging.debug('stock: %s' % self.symbol)
-        logging.debug('price: %f' % self.value)
+        logging.debug('ask: %f' % self.value)
 
         return True
 

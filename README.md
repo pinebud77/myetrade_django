@@ -4,9 +4,8 @@ Django-based MyEtrade
 This is personal test for Django + my trading code.
 
 ToDO :
-* use timezone
-* think about algorithms now -_-;
-* bugfix : there are plenty of bugs yet..
+* bugfix : there are plenty of bugs yet.. (too many bugs!!!)
+* think more about algorithms now -_-;
 
 Done :
 * running algorithm on real trading or simulation

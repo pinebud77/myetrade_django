@@ -5,8 +5,9 @@ import csv
 import io
 import urllib
 from . import models
-from .algorithms import FillAlgorithm, TrendAlgorithm, OverBuyAlgorithm, OverSellAlgorithm, MonkeyAlgorithm
-from datetime import date, datetime, timedelta
+from .algorithms import FillAlgorithm, TrendAlgorithm, OverBuyAlgorithm, OverSellAlgorithm
+from .algorithms import MonkeyAlgorithm, EmptyAlgorithm
+from django.utils import timezone
 from django.db import transaction
 import python_etrade.client as etclient
 import python_simtrade.client as simclient
@@ -58,8 +59,8 @@ def store_db_stock(db_stock, stock):
 
 def store_day_report(db_account, dt):
     try:
-        t_date = date(year=dt.year, month=dt.month, day=dt.day)
-        prev_report = models.DayReport.objects.filter(account=db_account, date=t_date)[0]
+        t_dt = timezone.datetime(year=dt.year, month=dt.month, day=dt.day)
+        prev_report = models.DayReport.objects.filter(account=db_account, date=t_dt.date())[0]
         prev_report.delete()
     except IndexError:
         pass
@@ -71,7 +72,7 @@ def store_day_report(db_account, dt):
     day_report.save()
 
 
-def store_trade(stock, dt, decision, failed, failure_reason):
+def store_order(stock, dt, decision, failed, failure_reason):
     reasons = models.FailureReason.objects.filter(message=failure_reason)
     if not reasons:
         reason = models.FailureReason()
@@ -80,25 +81,25 @@ def store_trade(stock, dt, decision, failed, failure_reason):
     else:
         reason = reasons[0]
 
-    trade = models.Trade()
-    trade.date = dt
-    trade.symbol = stock.symbol
-    trade.account_id = stock.account.id
-    trade.count = abs(decision)
-    trade.price = stock.value
-    trade.failure_reason = reason
+    order = models.Order()
+    order.dt = dt
+    order.symbol = stock.symbol
+    order.account_id = stock.account.id
+    order.count = abs(decision)
+    order.price = stock.value
+    order.failure_reason = reason
     if decision > 0 and not failed:
-        trade.action = models.ACTION_BUY
+        order.action = models.ACTION_BUY
     elif decision > 0:
-        trade.action = models.ACTION_BUY_FAIL
+        order.action = models.ACTION_BUY_FAIL
     elif decision < 0 and not failed:
-        trade.action = models.ACTION_SELL
+        order.action = models.ACTION_SELL
     else:
-        trade.action = models.ACTION_SELL_FAIL
-    trade.save()
+        order.action = models.ACTION_SELL_FAIL
+    order.save()
 
 
-def get_quotes(client, dt):
+def store_quotes(client, dt):
     symbol_list = []
     for stock in models.Stock.objects.all():
         if str(stock.symbol) not in symbol_list:
@@ -109,15 +110,16 @@ def get_quotes(client, dt):
         if quote is None:
             continue
         try:
-            prev_quote = models.Quote.objects.filter(symbol=symbol, date=dt).order_by('-date')[0]
+            prev_quote = models.Quote.objects.filter(symbol=symbol, dt=dt).order_by('-dt')[0]
             prev_quote.delete()
         except IndexError:
             pass
 
         db_quote = models.Quote()
-        db_quote.date = dt
+        db_quote.dt = dt
         db_quote.symbol = symbol
-        db_quote.price = quote.ask
+        db_quote.ask = quote.ask
+        db_quote.bid = quote.bid
         db_quote.save()
 
 
@@ -142,6 +144,7 @@ def store_order_id(order_id):
 
 
 alg_fill = FillAlgorithm()
+alg_empty = EmptyAlgorithm()
 alg_trend = TrendAlgorithm(None)
 alg_day_trend = DayTrendAlgorithm(None)
 alg_over_buy = OverBuyAlgorithm()
@@ -153,7 +156,7 @@ alg_monkey = MonkeyAlgorithm()
 def run(dt=None, client=None):
     #logging.basicConfig(level=logging.DEBUG)
     if dt is None:
-        dt = datetime.now()
+        dt = timezone.now()
 
     need_logout = False
     if client is None:
@@ -174,7 +177,7 @@ def run(dt=None, client=None):
     alg_trend.dt = dt
     alg_day_trend.dt = dt
 
-    get_quotes(client, dt)
+    store_quotes(client, dt)
     order_id = get_order_id()
 
     for db_account in models.Account.objects.all():
@@ -213,6 +216,8 @@ def run(dt=None, client=None):
                     decision = alg_over_sell.trade_decision(stock)
                 elif stock.algorithm_string == 'monkey':
                     decision = alg_monkey.trade_decision(stock)
+                elif stock.algorithm_string == 'empty':
+                    decision = alg_empty.trade_decision(stock)
 
             logging.debug('decision=%d' % decision)
 
@@ -227,7 +232,7 @@ def run(dt=None, client=None):
                         trade_failed = True
 
                 order_id += 1
-                store_trade(stock, dt, decision, trade_failed, stock.get_failure_reason())
+                store_order(stock, dt, decision, trade_failed, stock.get_failure_reason())
 
             store_db_stock(db_stock, stock)
 
@@ -249,7 +254,7 @@ def run(dt=None, client=None):
 def simulate(start_date=None, end_date=None):
     #logging.basicConfig(level=logging.DEBUG)
 
-    models.Trade.objects.all().delete()
+    models.Order.objects.all().delete()
     models.Quote.objects.all().delete()
     models.DayReport.objects.all().delete()
     models.DayHistory.objects.all().delete()
@@ -270,12 +275,8 @@ def simulate(start_date=None, end_date=None):
         except IndexError:
             return False
 
-    cur_dt = datetime(year=first_quote.date.year,
-                      month=first_quote.date.month,
-                      day=first_quote.date.day,
-                      hour=7,
-                      minute=31,
-                      second=0)
+    cur_dt = timezone.datetime(year=first_quote.date.year, month=first_quote.date.month, day=first_quote.date.day,
+                               hour=9, minute=31, second=0, tzinfo=timezone.get_default_timezone())
 
     if end_date is None:
         last_quote = models.SimHistory.objects.all().order_by('-date')[0]
@@ -285,20 +286,16 @@ def simulate(start_date=None, end_date=None):
         except IndexError:
             return False
 
-    last_dt = datetime(year=last_quote.date.year,
-                       month=last_quote.date.month,
-                       day=last_quote.date.day,
-                       hour=23,
-                       minute=59,
-                       second=59)
+    last_dt = timezone.datetime(year=last_quote.date.year, month=last_quote.date.month, day=last_quote.date.day,
+                                hour=23, minute=59, second=59, tzinfo=timezone.get_default_timezone())
 
-    day_delta = timedelta(1)
+    day_delta = timezone.timedelta(1)
     us_holidays = holidays.UnitedStates()
 
     simclient.reset_sim_config()
     client = simclient.Client()
     client.login(cur_dt)
-    while cur_dt < last_dt:
+    while cur_dt <= last_dt:
         if cur_dt.weekday() == 5 or cur_dt.weekday() == 6:
             logging.info('skipping sim: Saturday or Sunday')
             cur_dt += day_delta
@@ -310,9 +307,8 @@ def simulate(start_date=None, end_date=None):
         print('running sim: ' + str(cur_dt))
         client.update(cur_dt)
         run(dt=cur_dt, client=client)
+        load_history_sim(cur_dt.date())
         cur_dt += day_delta
-        cur_date = date(year=cur_dt.year, month=cur_dt.month, day=cur_dt.day)
-        load_history_sim(cur_date)
 
     client.logout()
 
@@ -328,13 +324,14 @@ def load_history_sim(cur_date):
 
     for symbol in symbol_list:
         try:
-            sim_history = models.SimHistory.objects.filter(symbol=symbol, date=cur_date)[0]
+            sim_history = models.SimHistory.objects.filter(symbol=symbol, date__lte=cur_date).order_by('-date')[0]
         except IndexError:
+            logging.error('no history in sim loading')
             continue
 
         day_history = models.DayHistory()
         day_history.symbol = sim_history.symbol
-        day_history.date = sim_history.date
+        day_history.date = cur_date
         day_history.open = sim_history.open
         day_history.high = sim_history.high
         day_history.low = sim_history.low
@@ -357,7 +354,7 @@ def load_history_wsj(today):
         except IndexError:
             pass
 
-    td = timedelta(10)
+    td = timezone.timedelta(20)
     start_date = today - td
 
     for symbol in symbol_list:
@@ -380,16 +377,16 @@ def load_history_wsj(today):
             if row[0] == 'Date':
                 continue
             dates = row[0].split('/')
-            t_date = date(year=int(dates[2])+2000, month=int(dates[0]), day=int(dates[1]))
+            t_dt = timezone.datetime(year=int(dates[2])+2000, month=int(dates[0]), day=int(dates[1]))
             try:
-                t_history = models.DayHistory.objects.filter(symbol=symbol, date=t_date)[0]
+                t_history = models.DayHistory.objects.filter(symbol=symbol, date=t_dt.date())[0]
                 break
             except IndexError:
                 pass
 
             day_history = models.DayHistory()
             day_history.symbol = symbol
-            day_history.date = t_date
+            day_history.date = t_dt.date()
             day_history.open = float(row[1])
             day_history.high = float(row[2])
             day_history.low = float(row[3])
