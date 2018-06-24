@@ -29,8 +29,8 @@ class TradeAlgorithm:
 
 
 trend_variables = [
-    {'up_count': 3, 'down_count': 4, 'pause_count': 5},  # conservative
-    {'up_count': 2, 'down_count': 3, 'pause_count': 4},  # moderate
+    {'up_count': 4, 'down_count': 4, 'pause_count': 5},  # conservative
+    {'up_count': 3, 'down_count': 3, 'pause_count': 4},  # moderate
     {'up_count': 2, 'down_count': 2, 'pause_count': 3},  # aggressive
 ]
 MIN_HISTORY = 10
@@ -79,13 +79,12 @@ class TrendAlgorithm(TradeAlgorithm):
                 pickle.dump(pause_dict, open(TREND_CONFIG, 'wb'))
                 return 0
             if keep_up >= up_count:
-                count = buy_all(stock)
-                logger.debug('%s: buy %d' % (stock.symbol, count))
-                return count
+                logger.debug('position: buy')
+                return buy_all(stock)
             return 0
 
         if keep_down >= down_count:
-            logger.debug('%s: sell %d' % (stock.symbol, stock.count))
+            logger.debug('position: sell')
             return -stock.count
 
         return 0
