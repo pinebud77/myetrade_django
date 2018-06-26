@@ -93,12 +93,12 @@ class TrendAlgorithm(TradeAlgorithm):
 class MonkeyAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
         logger.debug('kikikik')
-        val = random() % 20
-        if not stock.count and val > 15:
+        val = random()
+        if not stock.count and val > 0.85:
             logger.debug('buy all')
             return buy_all(stock)
 
-        if stock.count and val > 15:
+        if stock.count and val > 0.85:
             logger.debug('sell all')
             return -stock.count
 
