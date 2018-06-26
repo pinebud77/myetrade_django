@@ -11,4 +11,4 @@ fi
 
 echo "non-holiday"
 cd ${DJANGO_BASE}/logs
-wget -q --no-check-certificate -O ${1} https://127.0.0.1/stock/${1}
+wget -q --no-check-certificate -O ${1}.log https://127.0.0.1/stock/${1}
