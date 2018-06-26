@@ -5,13 +5,14 @@ export DISPLAY=:99
 
 NAME="stock"
 DJANGODIR=/home/pi/myetrade_django
-SOCKFILE=/home/pi/myetrade_django/run/gunicorn.sock
+SOCKFILE=${DJANGODIR}/run/gunicorn.sock
 USER=pi
 GROUP=pi
 NUM_WORKERS=2
 TIME_OUT=300
 DJANGO_SETTINGS_MODULE=myetrade_django.settings
 DJANGO_WSGI_MODULE=myetrade_django.wsgi
+PIDFILE=${DJANGODIR}/run/gunicorn.pid
 
 echo "Starting $NAME as `whoami`"
 
@@ -29,4 +30,5 @@ exec /usr/local/bin/gunicorn ${DJANGO_WSGI_MODULE}:application \
 	--bind=unix:$SOCKFILE \
 	--log-level=debug \
 	--timeout=$TIME_OUT \
+	--pid=${PIDFILE} \
 	--log-file=-
