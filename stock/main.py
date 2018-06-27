@@ -20,7 +20,7 @@ except ModuleNotFoundError:
 
 try:
     from .private_algorithms import DayTrendAlgorithm, OpenCloseAlgorithm, TrendTrendAlgorithm
-    from .private_algorithms import DTTTAlgorithm, AggDTAlgorithm
+    from .private_algorithms import DTTTAlgorithm, AggDTAlgorithm, OCTrendAlgorithm
 except ModuleNotFoundError:
     from .algorithms import TrendAlgorithm as DayTrendAlgorithm
 
@@ -60,12 +60,10 @@ def store_db_stock(db_stock, stock):
 
 
 def store_day_report(db_account, dt):
-    try:
-        t_dt = timezone.datetime(year=dt.year, month=dt.month, day=dt.day)
-        prev_report = models.DayReport.objects.filter(account=db_account, date=t_dt.date())[0]
+    prev_reports = models.DayReport.objects.filter(account=db_account, date=dt.date())
+    for prev_report in prev_reports:
         prev_report.delete()
-    except IndexError:
-        pass
+
     day_report = models.DayReport()
     day_report.date = dt
     day_report.account = db_account
@@ -111,11 +109,9 @@ def store_quotes(client, dt):
         quote = client.get_quote(symbol)
         if quote is None:
             continue
-        try:
-            prev_quote = models.Quote.objects.filter(symbol=symbol, dt=dt).order_by('-dt')[0]
+        prev_quotes = models.Quote.objects.filter(symbol=symbol, dt=dt).order_by('-dt')
+        for prev_quote in prev_quotes:
             prev_quote.delete()
-        except IndexError:
-            pass
 
         db_quote = models.Quote()
         db_quote.dt = dt
@@ -154,6 +150,7 @@ alg_open_close = OpenCloseAlgorithm()
 alg_trend_trend = TrendTrendAlgorithm()
 alg_dt_tt = DTTTAlgorithm()
 alg_adt = AggDTAlgorithm()
+alg_oc_trend = OCTrendAlgorithm()
 
 
 @transaction.atomic
@@ -222,6 +219,8 @@ def run(dt=None, client=None):
                     decision = alg_dt_tt.trade_decision(stock)
                 elif stock.algorithm_string == 'adt':
                     decision = alg_adt.trade_decision(stock)
+                elif stock.algorithm_string == 'oc_trend':
+                    decision = alg_oc_trend.trade_decision(stock)
 
             logger.debug('decision=%d' % decision)
 
@@ -262,7 +261,7 @@ def simulate(start_date=None, end_date=None):
     models.DayHistory.objects.all().delete()
 
     for db_account in models.Account.objects.all():
-        db_account.mode = models.MODE_SETUP
+        db_account.mode = models.MODE_RUN
         db_account.save()
 
         for db_stock in models.Stock.objects.filter(account=db_account):
@@ -330,11 +329,9 @@ def load_history_sim(cur_date):
             continue
 
         for sim_history in sim_histories:
-            try:
-                prev_history = models.DayHistory.objects.filter(symbol=symbol, date=sim_history.date)[0]
+            prev_histories = models.DayHistory.objects.filter(symbol=symbol, date=sim_history.date)
+            if prev_histories:
                 break
-            except IndexError:
-                pass
 
             day_history = models.DayHistory()
             day_history.symbol = sim_history.symbol
@@ -354,23 +351,17 @@ def load_history_wsj(today):
         if str(stock.symbol) not in symbol_list:
             symbol_list.append(str(stock.symbol))
     for symbol in symbol_list:
-        try:
-            today_history = models.DayHistory.objects.filter(symbol=symbol, date=today)[0]
-            if today_history:
-                continue
-        except IndexError:
-            pass
+        today_histories = models.DayHistory.objects.filter(symbol=symbol, date=today)
+        if today_histories:
+            continue
 
     td = timezone.timedelta(MIN_HISTORY_DAYS)
     start_date = today - td
 
     for symbol in symbol_list:
-        try:
-            today_history = models.DayHistory.objects.filter(symbol=symbol, date=today)[0]
-            if today_history:
-                continue
-        except IndexError:
-            pass
+        today_histories = models.DayHistory.objects.filter(symbol=symbol, date=today)
+        if today_histories:
+            continue
 
         url = 'http://quotes.wsj.com/%s/historical-prices/download?MOD_VIEW=page&' \
               'num_rows=100&range_days=100&endDate=%2.2d/%2.2d/%4.4d&' \
@@ -385,11 +376,10 @@ def load_history_wsj(today):
                 continue
             dates = row[0].split('/')
             t_dt = timezone.datetime(year=int(dates[2])+2000, month=int(dates[0]), day=int(dates[1]))
-            try:
-                t_history = models.DayHistory.objects.filter(symbol=symbol, date=t_dt.date())[0]
+
+            t_histories = models.DayHistory.objects.filter(symbol=symbol, date=t_dt.date())
+            if t_histories:
                 break
-            except IndexError:
-                pass
 
             day_history = models.DayHistory()
             day_history.symbol = symbol

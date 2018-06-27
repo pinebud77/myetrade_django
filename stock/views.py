@@ -77,10 +77,10 @@ def report_range_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
     account_id_list = []
     symbol_list = []
 
-    for account in Account.objects.all():
+    for account in Account.objects.all().order_by('account_id'):
         account_id_list.append(account.account_id)
 
-    for stock in Stock.objects.all():
+    for stock in Stock.objects.all().order_by('symbol'):
         if str(stock.symbol) not in symbol_list:
             symbol_list.append(str(stock.symbol))
 

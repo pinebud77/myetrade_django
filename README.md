@@ -45,7 +45,7 @@ Getting Performance Report after simulation or running the actual :
 1. click submit and the .csv file will be downloaded
 1. example report : monkey is the best !!!<br>
 monkey alg : https://docs.google.com/spreadsheets/d/1Qjo-xpnwApTDFgzEqWoiqVfLXRb1B38BnB0JVpfJeEk/edit?usp=sharing (random buy sell)<br>
-each algs : https://docs.google.com/spreadsheets/d/1mFiiBiKs-IKIHVxng5LP2pLywZSYVNAtqFDZrILjGZ4/edit?usp=sharing (something wrong.. too good to be true..)
+each algs : https://docs.google.com/spreadsheets/d/1mFiiBiKs-IKIHVxng5LP2pLywZSYVNAtqFDZrILjGZ4/edit?usp=sharing (result of over-optimization.. too good to be true..)
 
 Running the actual daily job :
 * open http://127.0.0.1:8000/stock/run/ on the same host as the server
