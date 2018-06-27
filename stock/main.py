@@ -19,7 +19,8 @@ except ModuleNotFoundError:
     pass
 
 try:
-    from .private_algorithms import DayTrendAlgorithm, OpenCloseAlgorithm, TrendTrendAlgorithm, DTTTAlgorithm
+    from .private_algorithms import DayTrendAlgorithm, OpenCloseAlgorithm, TrendTrendAlgorithm
+    from .private_algorithms import DTTTAlgorithm, AggDTAlgorithm
 except ModuleNotFoundError:
     from .algorithms import TrendAlgorithm as DayTrendAlgorithm
 
@@ -152,6 +153,7 @@ alg_monkey = MonkeyAlgorithm()
 alg_open_close = OpenCloseAlgorithm()
 alg_trend_trend = TrendTrendAlgorithm()
 alg_dt_tt = DTTTAlgorithm()
+alg_adt = AggDTAlgorithm()
 
 
 @transaction.atomic
@@ -218,6 +220,8 @@ def run(dt=None, client=None):
                     decision = alg_trend_trend.trade_decision(stock)
                 elif stock.algorithm_string == 'dt_tt':
                     decision = alg_dt_tt.trade_decision(stock)
+                elif stock.algorithm_string == 'adt':
+                    decision = alg_adt.trade_decision(stock)
 
             logger.debug('decision=%d' % decision)
 
