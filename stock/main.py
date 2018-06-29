@@ -25,7 +25,7 @@ except ModuleNotFoundError:
     from .algorithms import TrendAlgorithm as DayTrendAlgorithm
 
 logger = logging.getLogger('main_loop')
-MIN_HISTORY_DAYS = 20
+MIN_HISTORY_DAYS = 30
 
 
 def load_db_account(db_account, account):
@@ -301,7 +301,7 @@ def simulate(start_date=None, end_date=None):
             logger.info('skipping sim: Saturday or Sunday')
             cur_dt += day_delta
             continue
-        if cur_dt in us_holidays:
+        if cur_dt.date() in us_holidays:
             logger.info('skipping sim: US holiday')
             cur_dt += day_delta
             continue

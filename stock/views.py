@@ -1,5 +1,9 @@
 import logging
 import csv
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
+import mpld3
 from . import main
 from python_simtrade import load_history
 from .forms import *
@@ -14,6 +18,111 @@ from django.utils import timezone
 from os.path import realpath, dirname
 
 CUR_DIR = dirname(realpath(__file__))
+
+
+def get_report_list(start_date, end_date):
+    report_list = []
+    account_id_list = []
+    symbol_list = []
+
+    for account in Account.objects.all().order_by('account_id'):
+        account_id_list.append(account.account_id)
+
+    for stock in Stock.objects.all().order_by('symbol'):
+        if str(stock.symbol) not in symbol_list:
+            symbol_list.append(str(stock.symbol))
+
+    prev_line = (0.0, ) * (1 + len(account_id_list) + len(symbol_list))
+    base_values = [0.0, ] * (len(account_id_list) + len(symbol_list))
+    for day_report in DayReport.objects.filter(date__gte=start_date, date__lte=end_date).order_by('date'):
+        line = list()
+        line.append('%d/%d/%d' % (day_report.date.month, day_report.date.day, day_report.date.year))
+        col = 1
+        for account_id in account_id_list:
+            if account_id == day_report.account_id:
+                val = float(day_report.net_value)
+            else:
+                val = prev_line[col] * base_values[col - 1]
+            if base_values[col - 1] == 0.0 and val != 1.0:
+                base_values[col - 1] = val
+            if base_values[col - 1]:
+                line.append(val / base_values[col - 1])
+            else:
+                line.append(1.0)
+            col += 1
+        for symbol in symbol_list:
+            try:
+                history = DayHistory.objects.filter(symbol=symbol, date=day_report.date)[0]
+                val = float(history.close)
+            except IndexError:
+                val = None
+            if base_values[col - 1] == 0.0 and val != 1.0 and val is not None:
+                base_values[col - 1] = val
+            if val is None:
+                line.append('')
+            elif base_values[col - 1]:
+                line.append(val / base_values[col - 1])
+            else:
+                line.append(1.0)
+            col += 1
+
+        line_tuple = tuple(line)
+        report_list.append(line_tuple)
+        prev_line = line_tuple
+
+    legends = ['date']
+    for account_id in account_id_list:
+        legends.append('account: %d' % account_id)
+    legends += symbol_list
+
+    return legends, report_list
+
+
+def get_html_fig(start_date, end_date):
+    legends, report_list = get_report_list(start_date, end_date)
+
+    data_list = list()
+    for legend in legends:
+        data_list.append(list())
+
+    for line in report_list:
+        for n in range(len(line)):
+            if n == 0:
+                spl = line[n].split('/')
+                date = timezone.datetime(year=int(spl[2]), month=int(spl[0]), day=int(spl[1])).date()
+                data_list[0].append(date)
+            else:
+                if line[n]:
+                    data_list[n].append(line[n])
+                else:
+                    data_list[n].append(None)
+
+    mpl.rcParams['axes.edgecolor'] = 'black'
+    mpl.rcParams['axes.facecolor'] = 'white'
+    mpl.rcParams['figure.facecolor'] = 'white'
+    mpl.rcParams['figure.edgecolor'] = 'white'
+    mpl.rcParams['figure.autolayout'] = 'True'
+    mpl.rcParams['axes.formatter.use_locale'] = 'True'
+    mpl.rcParams['savefig.edgecolor'] = 'white'
+    mpl.rcParams['savefig.facecolor'] = 'white'
+
+    fig, ax = plt.subplots()
+
+    font = {'size': 10}
+    mpl.rc('font', **font)
+    fig.patch.set_alpha(1)
+
+    for n in range(1, len(data_list)):
+        ax.plot_date(data_list[0], data_list[n], linestyle='solid', marker='', label=legends[n])
+    ax.grid(True)
+    legend = ax.legend(loc='upper left', shadow=True)
+    frame = legend.get_frame()
+    frame.set_facecolor('0.90')
+
+    fig.autofmt_xdate()
+    fig_html = mpld3.fig_to_html(fig)
+
+    return fig_html
 
 
 def check_fields_in_post(fields, post):
@@ -65,6 +174,8 @@ def logout_page(request):
     return redirect('/stock/')
 
 
+
+
 def report_range_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
     if not request.user.is_authenticated:
         return redirect('/stock/')
@@ -72,55 +183,7 @@ def report_range_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
     start_dt = timezone.datetime(year=int(s_year), month=int(s_month), day=int(s_day))
     end_dt = timezone.datetime(year=int(e_year), month=int(e_month), day=int(e_day))
 
-    report_list = []
-
-    account_id_list = []
-    symbol_list = []
-
-    for account in Account.objects.all().order_by('account_id'):
-        account_id_list.append(account.account_id)
-
-    for stock in Stock.objects.all().order_by('symbol'):
-        if str(stock.symbol) not in symbol_list:
-            symbol_list.append(str(stock.symbol))
-
-    prev_line = (0.0, ) * (1 + len(account_id_list) + len(symbol_list))
-    base_values = [0.0, ] * (len(account_id_list) + len(symbol_list))
-    for day_report in DayReport.objects.filter(date__gte=start_dt.date(), date__lte=end_dt.date()).order_by('date'):
-        line = list()
-        line.append('%d/%d/%d' % (day_report.date.month, day_report.date.day, day_report.date.year))
-        col = 1
-        for account_id in account_id_list:
-            if account_id == day_report.account_id:
-                val = float(day_report.net_value)
-            else:
-                val = prev_line[col] * base_values[col - 1]
-            if base_values[col - 1] == 0.0 and val != 1.0:
-                base_values[col - 1] = val
-            if base_values[col - 1]:
-                line.append(val / base_values[col - 1])
-            else:
-                line.append(1.0)
-            col += 1
-        for symbol in symbol_list:
-            try:
-                history = DayHistory.objects.filter(symbol=symbol, date=day_report.date)[0]
-                val = float(history.close)
-            except IndexError:
-                val = None
-            if base_values[col - 1] == 0.0 and val != 1.0:
-                base_values[col - 1] = val
-            if val is None:
-                line.append('')
-            elif base_values[col - 1]:
-                line.append(val / base_values[col - 1])
-            else:
-                line.append(1.0)
-            col += 1
-
-        line_tuple = tuple(line)
-        report_list.append(line_tuple)
-        prev_line = line_tuple
+    legends, report_list = get_report_list(start_dt.date(), end_dt.date())
 
     filename = 'report_%d%2.2d%2.2d_%d%2.2d%2.2d.csv' % (start_dt.year, start_dt.month, start_dt.day,
                                                          end_dt.year, end_dt.month, end_dt.day)
@@ -128,12 +191,7 @@ def report_range_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
 
     writer = csv.writer(response)
-    header = ['date']
-    for account in account_id_list:
-        header.append('account:%d' % account)
-    for symbol in symbol_list:
-        header.append(symbol)
-    writer.writerow(header)
+    writer.writerow(legends)
 
     for line in report_list:
         writer.writerow(line)
@@ -239,11 +297,20 @@ def simulate_page(request):
         end_day = int(request.POST['end_date_day'])
         end_year = int(request.POST['end_date_year'])
 
-        return redirect('/stock/run_sim/%4.4d%2.2d%2.2d-%4.4d%2.2d%2.2d' % (start_year, start_month, start_day,
-                                                                            end_year, end_month, end_day))
+        start_date = timezone.datetime(year=start_year, month=start_month, day=start_day).date()
+        end_date = timezone.datetime(year=end_year, month=end_month, day=end_day).date()
+
+        main.simulate(start_date, end_date)
+
+        form = SimulateForm(initial={'start_date': start_date,
+                                     'end_date': end_date,
+                                     'algorithm': algorithm,
+                                     'stance': stance})
+        fig_html = get_html_fig(start_date, end_date)
+        return render(request, 'stock/simulate.html', {'form': form, 'figure': fig_html})
     else:
         form = SimulateForm()
-        return render(request, 'stock/simulate.html', {'form': form})
+        return render(request, 'stock/simulate.html', {'form': form, 'figure': None})
 
 
 def test_page(request):
@@ -255,19 +322,27 @@ def test_page(request):
     return render(request, 'stock/success.txt', {})
 
 
-def run_sim_page(request, s_year, s_month, s_day, e_year, e_month, e_day):
+def graph_range_page(request):
     if not request.user.is_authenticated:
         return redirect('/stock/')
 
-    start_dt = timezone.datetime(year=int(s_year), month=int(s_month), day=int(s_day))
-    end_dt = timezone.datetime(year=int(e_year), month=int(e_month), day=int(e_day))
-
-    res = main.simulate(start_dt.date(), end_dt.date())
-
-    if res:
-        return redirect('/stock/report_range/%4.4d%2.2d%2.2d-%4.4d%2.2d%2.2d' %
-                        (start_dt.year, start_dt.month, start_dt.day,
-                         end_dt.year, end_dt.month, end_dt.day))
+    if request.method == 'POST':
+        end_year = int(request.POST['end_date_year'])
+        end_month = int(request.POST['end_date_month'])
+        end_day = int(request.POST['end_date_day'])
+        days = int(request.POST['days'])
+        end_date = timezone.datetime(year=end_year, month=end_month, day=end_day)
     else:
-        return render(request, 'stock/error.txt', {})
+        end_date = timezone.now().date()
+        days = 30
+    start_date = end_date - timezone.timedelta(days)
+
+    initial_dict = dict()
+    initial_dict['end_date'] = end_date
+    initial_dict['days'] = '%d' % days
+    form = GraphRangeForm(initial=initial_dict)
+
+    fig_html = get_html_fig(start_date, end_date)
+
+    return render(request, 'stock/graph_range.html', {'form': form, 'figure': fig_html})
 

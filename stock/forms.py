@@ -3,6 +3,10 @@ from django.utils import timezone
 from .models import *
 
 
+year_choices = []
+for year in range(2002, timezone.now().year + 1):
+    year_choices.append('%d' % year)
+
 class LoginForm(forms.Form):
     username = forms.CharField(max_length=50, label='User:')
     password = forms.CharField(label='Password: ', widget=forms.PasswordInput())
@@ -10,10 +14,6 @@ class LoginForm(forms.Form):
 
 class ReportForm(forms.Form):
     td = timezone.timedelta(30)
-
-    year_choices = []
-    for year in range(2002, timezone.now().year + 1):
-        year_choices.append('%d' % year)
 
     start_date = forms.DateField(initial=timezone.now().today()-td, widget=forms.SelectDateWidget(years=year_choices))
     end_date = forms.DateField(initial=timezone.now().today(), widget=forms.SelectDateWidget(years=year_choices))
@@ -32,9 +32,10 @@ class SimulateForm(forms.ModelForm):
 
     td = timezone.timedelta(30)
 
-    year_choices = []
-    for year in range(2002, timezone.now().year + 1):
-        year_choices.append('%d' % year)
-
     start_date = forms.DateField(initial=timezone.now().today()-td, widget=forms.SelectDateWidget(years=year_choices))
     end_date = forms.DateField(initial=timezone.now().today(), widget=forms.SelectDateWidget(years=year_choices))
+
+
+class GraphRangeForm(forms.Form):
+    end_date = forms.DateField(initial=timezone.now().today(), widget=forms.SelectDateWidget(years=year_choices))
+    days = forms.IntegerField(initial=30)

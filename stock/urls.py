@@ -7,9 +7,7 @@ urlpatterns = [
     url(r'report_range/(?P<s_year>.{4})(?P<s_month>.{2})(?P<s_day>.{2})'
         r'-(?P<e_year>.{4})(?P<e_month>.{2})(?P<e_day>.{2})',
         views.report_range_page),
-    url(r'run_sim/(?P<s_year>.{4})(?P<s_month>.{2})(?P<s_day>.{2})'
-        r'-(?P<e_year>.{4})(?P<e_month>.{2})(?P<e_day>.{2})',
-        views.run_sim_page),
+    path('graph_range/', views.graph_range_page),
     path('test/', views.test_page),
     path('report/', views.report_page),
     path('simulate/', views.simulate_page),
