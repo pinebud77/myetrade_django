@@ -11,8 +11,12 @@ class LoginForm(forms.Form):
 class ReportForm(forms.Form):
     td = timezone.timedelta(30)
 
-    start_date = forms.DateField(initial=timezone.now().today()-td, widget=forms.SelectDateWidget())
-    end_date = forms.DateField(initial=timezone.now().today(), widget=forms.SelectDateWidget())
+    year_choices = []
+    for year in range(2002, timezone.now().year + 1):
+        year_choices.append('%d' % year)
+
+    start_date = forms.DateField(initial=timezone.now().today()-td, widget=forms.SelectDateWidget(years=year_choices))
+    end_date = forms.DateField(initial=timezone.now().today(), widget=forms.SelectDateWidget(years=year_choices))
 
 
 class SimulateForm(forms.ModelForm):
