@@ -12,7 +12,11 @@ from .algorithms import FillAlgorithm, TrendAlgorithm
 from .algorithms import MonkeyAlgorithm, EmptyAlgorithm
 from django.utils import timezone
 from django.db import transaction
-from sklearn.neighbors import KNeighborsClassifier
+
+try:
+    from sklearn.neighbors import KNeighborsClassifier
+except ModuleNotFoundError:
+    pass
 
 try:
     from .config import *
@@ -401,6 +405,9 @@ def load_history_wsj(today):
 
 
 def learn(start_date, end_date):
+    if KNeighborsClassifier is None:
+        return None
+
     symbol_list = list()
     x_train = list()
     y_train = list()

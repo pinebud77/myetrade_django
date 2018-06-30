@@ -1,7 +1,6 @@
 import logging
 import csv
 import matplotlib as mpl
-import sklearn
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import mpld3
@@ -300,7 +299,6 @@ def simulate_page(request):
         start_date = timezone.datetime(year=start_year, month=start_month, day=start_day).date()
         end_date = timezone.datetime(year=end_year, month=end_month, day=end_day).date()
 
-        print(predictor)
         main.simulate(start_date, end_date, predictor=predictor)
 
         form = SimulateForm(initial={'start_date': start_date,
