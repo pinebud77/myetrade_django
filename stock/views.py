@@ -18,7 +18,6 @@ from django.utils import timezone
 from os.path import realpath, dirname
 
 CUR_DIR = dirname(realpath(__file__))
-predictor = None
 
 
 def get_report_list(start_date, end_date):
@@ -299,7 +298,7 @@ def simulate_page(request):
         start_date = timezone.datetime(year=start_year, month=start_month, day=start_day).date()
         end_date = timezone.datetime(year=end_year, month=end_month, day=end_day).date()
 
-        main.simulate(start_date, end_date, predictor=predictor)
+        main.simulate(start_date, end_date)
 
         form = SimulateForm(initial={'start_date': start_date,
                                      'end_date': end_date,
@@ -384,8 +383,7 @@ def learn_page(request):
         start_date = timezone.datetime(year=start_year, month=start_month, day=start_day).date()
         end_date = timezone.datetime(year=end_year, month=end_month, day=end_day).date()
 
-        global predictor
-        predictor = main.learn(start_date, end_date)
+        main.learn(start_date, end_date)
 
         initial_dict = dict()
         initial_dict['start_date'] = start_date

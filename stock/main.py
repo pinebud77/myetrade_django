@@ -14,18 +14,13 @@ from django.utils import timezone
 from django.db import transaction
 
 try:
-    from sklearn.neighbors import KNeighborsClassifier
-except ImportError:
-    pass
-
-try:
     from .config import *
 except ImportError:
     pass
 
 try:
     from .private_algorithms import DayTrendAlgorithm, OpenCloseAlgorithm, TrendTrendAlgorithm, MLAlgorithm
-    from .private_algorithms import DTTTAlgorithm, AggDTAlgorithm, OCTrendAlgorithm
+    from .private_algorithms import DTTTAlgorithm, AggDTAlgorithm, OCTrendAlgorithm, tf_learn
 except ImportError:
     from .algorithms import TrendAlgorithm as DayTrendAlgorithm
 
@@ -160,7 +155,7 @@ alg_ml = MLAlgorithm()
 
 
 @transaction.atomic
-def run(dt=None, client=None, predictor=None):
+def run(dt=None, client=None):
     if dt is None:
         dt = timezone.now()
 
@@ -179,8 +174,6 @@ def run(dt=None, client=None, predictor=None):
             return False
         logger.debug('logged in')
         need_logout = True
-
-    alg_ml.predictor = predictor
 
     store_quotes(client, dt)
     order_id = get_order_id()
@@ -264,7 +257,7 @@ def run(dt=None, client=None, predictor=None):
     return True
 
 
-def simulate(start_date=None, end_date=None, predictor=None):
+def simulate(start_date=None, end_date=None):
     models.Order.objects.all().delete()
     models.Quote.objects.all().delete()
     models.DayReport.objects.all().delete()
@@ -317,7 +310,7 @@ def simulate(start_date=None, end_date=None, predictor=None):
             continue
         logger.info('running sim: ' + str(cur_dt))
         client.update(cur_dt)
-        run(dt=cur_dt, client=client, predictor=predictor)
+        run(dt=cur_dt, client=client)
         load_history_sim(cur_dt.date())
         cur_dt += day_delta
 
@@ -405,48 +398,5 @@ def load_history_wsj(today):
 
 
 def learn(start_date, end_date):
-    if KNeighborsClassifier is None:
-        return None
-
-    symbol_list = list()
-    x_train = list()
-    y_train = list()
-
-    for stock in models.Stock.objects.all():
-        if str(stock.symbol) not in symbol_list:
-            symbol_list.append(str(stock.symbol))
-
-    for symbol in symbol_list:
-        sim_histories = models.SimHistory.objects.filter(symbol=symbol,
-                                                         date__gte=start_date,
-                                                         date__lte=end_date).order_by('-date')
-        for n in range(len(sim_histories) - 1):
-            sim_history = sim_histories[n]
-            gap = sim_history.high - sim_history.low
-            if not gap:
-                continue
-
-            oc_rate = (sim_history.close - sim_history.open) / gap
-            close_rate = (sim_history.close - sim_history.low) / gap
-
-            x_train.append((oc_rate, close_rate))
-
-            y_float = (sim_histories[n+1].close - sim_history.close) / sim_history.close
-
-            y = int(y_float * 300)
-            if y >= 3:
-                y = 3
-            elif y <= -3:
-                y = -3
-
-            y_train.append(y)
-
-    knn = KNeighborsClassifier()
-
-    knn.fit(x_train, y_train)
-
-    logger.info('loaded learning set')
-
-    return knn
-
+    tf_learn(start_date, end_date)
 
