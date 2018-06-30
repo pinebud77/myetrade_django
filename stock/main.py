@@ -15,18 +15,18 @@ from django.db import transaction
 
 try:
     from sklearn.neighbors import KNeighborsClassifier
-except ModuleNotFoundError:
+except ImportError:
     pass
 
 try:
     from .config import *
-except ModuleNotFoundError:
+except ImportError:
     pass
 
 try:
     from .private_algorithms import DayTrendAlgorithm, OpenCloseAlgorithm, TrendTrendAlgorithm, MLAlgorithm
     from .private_algorithms import DTTTAlgorithm, AggDTAlgorithm, OCTrendAlgorithm
-except ModuleNotFoundError:
+except ImportError:
     from .algorithms import TrendAlgorithm as DayTrendAlgorithm
 
 logger = logging.getLogger('main_loop')
