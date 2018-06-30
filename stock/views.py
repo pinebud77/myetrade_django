@@ -1,6 +1,7 @@
 import logging
 import csv
 import matplotlib as mpl
+import sklearn
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import mpld3
@@ -18,6 +19,7 @@ from django.utils import timezone
 from os.path import realpath, dirname
 
 CUR_DIR = dirname(realpath(__file__))
+predictor = None
 
 
 def get_report_list(start_date, end_date):
@@ -78,9 +80,7 @@ def get_report_list(start_date, end_date):
     return legends, report_list
 
 
-def get_html_fig(start_date, end_date):
-    legends, report_list = get_report_list(start_date, end_date)
-
+def get_html_fig(legends, report_list):
     data_list = list()
     for legend in legends:
         data_list.append(list())
@@ -300,14 +300,27 @@ def simulate_page(request):
         start_date = timezone.datetime(year=start_year, month=start_month, day=start_day).date()
         end_date = timezone.datetime(year=end_year, month=end_month, day=end_day).date()
 
-        main.simulate(start_date, end_date)
+        print(predictor)
+        main.simulate(start_date, end_date, predictor=predictor)
 
         form = SimulateForm(initial={'start_date': start_date,
                                      'end_date': end_date,
                                      'algorithm': algorithm,
                                      'stance': stance})
-        fig_html = get_html_fig(start_date, end_date)
-        return render(request, 'stock/simulate.html', {'form': form, 'figure': fig_html})
+        legends, report_list = get_report_list(start_date, end_date)
+        fig_html = get_html_fig(legends, report_list)
+        report_url = '%4.4d%2.2d%2.2d-%4.4d%2.2d%2.2d' % (start_date.year, start_date.month, start_date.day,
+                                                          end_date.year, end_date.month, end_date.day)
+        if report_list:
+            body_list = report_list[-1]
+        else:
+            body_list = None
+
+        return render(request, 'stock/simulate.html', {'form': form,
+                                                       'figure': fig_html,
+                                                       'report_url': report_url,
+                                                       'head_list': legends,
+                                                       'body_list': body_list})
     else:
         form = SimulateForm()
         return render(request, 'stock/simulate.html', {'form': form, 'figure': None})
@@ -322,7 +335,7 @@ def test_page(request):
     return render(request, 'stock/success.txt', {})
 
 
-def graph_range_page(request):
+def graph_page(request):
     if not request.user.is_authenticated:
         return redirect('/stock/')
 
@@ -342,7 +355,46 @@ def graph_range_page(request):
     initial_dict['days'] = '%d' % days
     form = GraphRangeForm(initial=initial_dict)
 
-    fig_html = get_html_fig(start_date, end_date)
+    legends, report_list = get_report_list(start_date, end_date)
+    fig_html = get_html_fig(legends, report_list)
+    report_url = '%4.4d%2.2d%2.2d-%4.4d%2.2d%2.2d' % (start_date.year, start_date.month, start_date.day,
+                                                      end_date.year, end_date.month, end_date.day)
+    if report_list:
+        body_list = report_list[-1]
+    else:
+        body_list = None
 
-    return render(request, 'stock/graph_range.html', {'form': form, 'figure': fig_html})
+    return render(request, 'stock/graph.html', {'form': form,
+                                                'figure': fig_html,
+                                                'report_url': report_url,
+                                                'head_list': legends,
+                                                'body_list': body_list})
 
+
+def learn_page(request):
+    if not request.user.is_authenticated:
+        return redirect('/stock/')
+
+    if request.method == 'POST':
+        start_month = int(request.POST['start_date_month'])
+        start_day = int(request.POST['start_date_day'])
+        start_year = int(request.POST['start_date_year'])
+        end_month = int(request.POST['end_date_month'])
+        end_day = int(request.POST['end_date_day'])
+        end_year = int(request.POST['end_date_year'])
+
+        start_date = timezone.datetime(year=start_year, month=start_month, day=start_day).date()
+        end_date = timezone.datetime(year=end_year, month=end_month, day=end_day).date()
+
+        global predictor
+        predictor = main.learn(start_date, end_date)
+
+        initial_dict = dict()
+        initial_dict['start_date'] = start_date
+        initial_dict['end_date'] = end_date
+
+        form = LearnForm(initial=initial_dict)
+    else:
+        form = LearnForm()
+
+    return render(request, 'stock/learn.html', {'form': form})

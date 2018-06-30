@@ -4,12 +4,13 @@ Django-based MyEtrade
 This is personal test for Django + my trading code.
 
 ToDO :
-* bugfix : there are plenty of bugs yet.. (too many bugs!!!)
 * think more about algorithms now -_-;
+* bugfix : there are plenty of bugs yet.. (too many bugs!!! too many bugs!!)
 
 Done :
 * running algorithm on real trading or simulation
 * several dummy algorithms (of no practical use)
+* graph and report generation
 
 Installation :
 1. Required libraries(not clear now) : django, request, request_oauth, holidays, fake_useragent
@@ -45,7 +46,9 @@ Getting Performance Report after simulation or running the actual :
 1. click submit and the .csv file will be downloaded
 1. example report : monkey is the best !!!<br>
 monkey alg : https://docs.google.com/spreadsheets/d/1Qjo-xpnwApTDFgzEqWoiqVfLXRb1B38BnB0JVpfJeEk/edit?usp=sharing (random buy sell)<br>
-each algs : https://docs.google.com/spreadsheets/d/1mFiiBiKs-IKIHVxng5LP2pLywZSYVNAtqFDZrILjGZ4/edit?usp=sharing (result of over-optimization.. too good to be true..)
+each algs : https://docs.google.com/spreadsheets/d/1mFiiBiKs-IKIHVxng5LP2pLywZSYVNAtqFDZrILjGZ4/edit?usp=sharing (result of over-optimization T\_T)<br>
+2008 economic crisis : https://docs.google.com/spreadsheets/d/10w4W-io3y1asdI8q3UYn6nKVTN0k9Cb68McNK_BTMjk/edit?usp=sharing (-\_-)<br>
+2017 upup!! : https://docs.google.com/spreadsheets/d/1vbSCPOxwddRwa2NMc0Lp8dLhFbGPMEX35jp6e0q4t3M/edit?usp=sharing (-\_-)
 
 Running the actual daily job :
 * open http://127.0.0.1:8000/stock/run/ on the same host as the server

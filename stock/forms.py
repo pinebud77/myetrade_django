@@ -7,6 +7,7 @@ year_choices = []
 for year in range(2002, timezone.now().year + 1):
     year_choices.append('%d' % year)
 
+
 class LoginForm(forms.Form):
     username = forms.CharField(max_length=50, label='User:')
     password = forms.CharField(label='Password: ', widget=forms.PasswordInput())
@@ -17,6 +18,13 @@ class ReportForm(forms.Form):
 
     start_date = forms.DateField(initial=timezone.now().today()-td, widget=forms.SelectDateWidget(years=year_choices))
     end_date = forms.DateField(initial=timezone.now().today(), widget=forms.SelectDateWidget(years=year_choices))
+
+
+class LearnForm(forms.Form):
+    start_date = forms.DateField(initial=timezone.datetime(year=2002, month=1, day=1),
+                                 widget=forms.SelectDateWidget(years=year_choices))
+    end_date = forms.DateField(initial=timezone.datetime(year=2002, month=12, day=31),
+                               widget=forms.SelectDateWidget(years=year_choices))
 
 
 class SimulateForm(forms.ModelForm):

@@ -4,14 +4,15 @@ import logging
 import csv
 import io
 import urllib
+import holidays
+import python_etrade.client as etclient
+import python_simtrade.client as simclient
 from . import models
 from .algorithms import FillAlgorithm, TrendAlgorithm
 from .algorithms import MonkeyAlgorithm, EmptyAlgorithm
 from django.utils import timezone
 from django.db import transaction
-import python_etrade.client as etclient
-import python_simtrade.client as simclient
-import holidays
+from sklearn.neighbors import KNeighborsClassifier
 
 try:
     from .config import *
@@ -19,7 +20,7 @@ except ModuleNotFoundError:
     pass
 
 try:
-    from .private_algorithms import DayTrendAlgorithm, OpenCloseAlgorithm, TrendTrendAlgorithm
+    from .private_algorithms import DayTrendAlgorithm, OpenCloseAlgorithm, TrendTrendAlgorithm, MLAlgorithm
     from .private_algorithms import DTTTAlgorithm, AggDTAlgorithm, OCTrendAlgorithm
 except ModuleNotFoundError:
     from .algorithms import TrendAlgorithm as DayTrendAlgorithm
@@ -151,10 +152,11 @@ alg_trend_trend = TrendTrendAlgorithm()
 alg_dt_tt = DTTTAlgorithm()
 alg_adt = AggDTAlgorithm()
 alg_oc_trend = OCTrendAlgorithm()
+alg_ml = MLAlgorithm()
 
 
 @transaction.atomic
-def run(dt=None, client=None):
+def run(dt=None, client=None, predictor=None):
     if dt is None:
         dt = timezone.now()
 
@@ -173,6 +175,8 @@ def run(dt=None, client=None):
             return False
         logger.debug('logged in')
         need_logout = True
+
+    alg_ml.predictor = predictor
 
     store_quotes(client, dt)
     order_id = get_order_id()
@@ -221,6 +225,8 @@ def run(dt=None, client=None):
                     decision = alg_adt.trade_decision(stock)
                 elif stock.algorithm_string == 'oc_trend':
                     decision = alg_oc_trend.trade_decision(stock)
+                elif stock.algorithm_string == 'ml':
+                    decision = alg_ml.trade_decision(stock)
 
             logger.debug('decision=%d' % decision)
 
@@ -254,7 +260,7 @@ def run(dt=None, client=None):
     return True
 
 
-def simulate(start_date=None, end_date=None):
+def simulate(start_date=None, end_date=None, predictor=None):
     models.Order.objects.all().delete()
     models.Quote.objects.all().delete()
     models.DayReport.objects.all().delete()
@@ -307,7 +313,7 @@ def simulate(start_date=None, end_date=None):
             continue
         logger.info('running sim: ' + str(cur_dt))
         client.update(cur_dt)
-        run(dt=cur_dt, client=client)
+        run(dt=cur_dt, client=client, predictor=predictor)
         load_history_sim(cur_dt.date())
         cur_dt += day_delta
 
@@ -392,3 +398,48 @@ def load_history_wsj(today):
             day_history.save()
 
     return True
+
+
+def learn(start_date, end_date):
+    symbol_list = list()
+    x_train = list()
+    y_train = list()
+
+    for stock in models.Stock.objects.all():
+        if str(stock.symbol) not in symbol_list:
+            symbol_list.append(str(stock.symbol))
+
+    for symbol in symbol_list:
+        sim_histories = models.SimHistory.objects.filter(symbol=symbol,
+                                                         date__gte=start_date,
+                                                         date__lte=end_date).order_by('-date')
+        for n in range(len(sim_histories) - 1):
+            sim_history = sim_histories[n]
+            gap = sim_history.high - sim_history.low
+            if not gap:
+                continue
+
+            oc_rate = (sim_history.close - sim_history.open) / gap
+            close_rate = (sim_history.close - sim_history.low) / gap
+
+            x_train.append((oc_rate, close_rate))
+
+            y_float = (sim_histories[n+1].close - sim_history.close) / sim_history.close
+
+            y = int(y_float * 300)
+            if y >= 3:
+                y = 3
+            elif y <= -3:
+                y = -3
+
+            y_train.append(y)
+
+    knn = KNeighborsClassifier()
+
+    knn.fit(x_train, y_train)
+
+    logger.info('loaded learning set')
+
+    return knn
+
+
