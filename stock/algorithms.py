@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import logging
 import pickle
+import random
 from . import models
 from os.path import realpath, dirname, join
-from random import random
 
 
 logger = logging.getLogger('algorithms')
@@ -93,7 +93,7 @@ class TrendAlgorithm(TradeAlgorithm):
 class MonkeyAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
         logger.debug('kikikik')
-        val = random()
+        val = random.random()
         if not stock.count and val > 0.85:
             logger.debug('buy all')
             return buy_all(stock)
