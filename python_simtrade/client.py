@@ -11,7 +11,18 @@ SIM_INITIAL_VALUE = 100000.0
 
 def reset_sim_config():
     config = dict()
-    config['accounts'] = [{'id': 0, 'cash_to_trade': SIM_INITIAL_VALUE, 'stocks': []}]
+    config['accounts'] = [
+        {'id': 0, 'cash_to_trade': SIM_INITIAL_VALUE, 'stocks': []},
+        {'id': 1, 'cash_to_trade': SIM_INITIAL_VALUE, 'stocks': []},
+        {'id': 2, 'cash_to_trade': SIM_INITIAL_VALUE, 'stocks': []},
+        {'id': 3, 'cash_to_trade': SIM_INITIAL_VALUE, 'stocks': []},
+        {'id': 4, 'cash_to_trade': SIM_INITIAL_VALUE, 'stocks': []},
+        {'id': 5, 'cash_to_trade': SIM_INITIAL_VALUE, 'stocks': []},
+        {'id': 6, 'cash_to_trade': SIM_INITIAL_VALUE, 'stocks': []},
+        {'id': 7, 'cash_to_trade': SIM_INITIAL_VALUE, 'stocks': []},
+        {'id': 8, 'cash_to_trade': SIM_INITIAL_VALUE, 'stocks': []},
+        {'id': 9, 'cash_to_trade': SIM_INITIAL_VALUE, 'stocks': []},
+    ]
 
     with open(SIM_CONFIG_FILE, 'w') as outfile:
         json.dump(config, outfile, indent=2, sort_keys=False)

@@ -3,6 +3,7 @@ import csv
 import urllib
 import io
 import logging
+import os
 from os.path import join, realpath, dirname
 from stock.models import SimHistory, Stock
 from django.utils import timezone
@@ -13,11 +14,11 @@ DATA_PATH = dirname(realpath(__file__)) + '/market_history'
 
 
 def get_symbol_list():
-    result = []
-
-    for stock in Stock.objects.all():
-        if str(stock.symbol) not in result:
-            result.append(str(stock.symbol))
+    result = list()
+    for file in os.listdir(DATA_PATH):
+        spl = file.split('.')
+        if spl[1] == 'csv':
+            result.append(spl[0])
 
     return result
 
