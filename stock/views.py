@@ -309,7 +309,10 @@ def simulate_page(request):
         report_url = '%4.4d%2.2d%2.2d-%4.4d%2.2d%2.2d' % (start_date.year, start_date.month, start_date.day,
                                                           end_date.year, end_date.month, end_date.day)
         if report_list:
-            body_list = report_list[-1]
+            body_list = list()
+            body_list.append(report_list[-1][0])
+            for f_value in report_list[-1][1:]:
+                body_list.append('%.3f' % f_value)
         else:
             body_list = None
 
@@ -357,7 +360,10 @@ def graph_page(request):
     report_url = '%4.4d%2.2d%2.2d-%4.4d%2.2d%2.2d' % (start_date.year, start_date.month, start_date.day,
                                                       end_date.year, end_date.month, end_date.day)
     if report_list:
-        body_list = report_list[-1]
+        body_list = list()
+        body_list.append(report_list[-1][0])
+        for f_value in report_list[-1][1:]:
+            body_list.append('%.3f' % f_value)
     else:
         body_list = None
 

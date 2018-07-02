@@ -3,7 +3,7 @@ from .models import *
 
 
 class OrderAdmin(admin.ModelAdmin):
-    fields = ['dt', 'account_id', 'symbol', 'action', 'ask']
+    fields = ['dt', 'account_id', 'symbol', 'action', 'price']
     ordering = ('-dt',)
 
 

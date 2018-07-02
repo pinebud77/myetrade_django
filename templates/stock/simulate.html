@@ -18,14 +18,14 @@ performance
     <thead>
     <tr>
         {% for head in head_list %}
-        <th>{{ head|safe }}</th>
+        <th align="right">{{ head|safe }}</th>
         {% endfor %}
     </tr>
     </thead>
     <tbody>
     <br>
     {% for body in body_list %}
-    <td>{{ body|safe }}</td>
+    <td align="right">{{ body|safe }}</td>
     {% endfor %}
     </tbody>
 </table>
