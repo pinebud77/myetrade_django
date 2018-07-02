@@ -41,7 +41,7 @@ def load_csv(symbol):
             history.high = float(row[2])
             history.low = float(row[3])
             history.close = float(row[4])
-            history.volume = int(row[5])
+            history.volume = int(float(row[5]))
             history.save()
 
     csv_file.close()

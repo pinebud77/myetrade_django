@@ -312,7 +312,10 @@ def simulate_page(request):
             body_list = list()
             body_list.append(report_list[-1][0])
             for f_value in report_list[-1][1:]:
-                body_list.append('%.3f' % f_value)
+                if f_value:
+                    body_list.append('%.3f' % f_value)
+                else:
+                    body_list.append('')
         else:
             body_list = None
 
@@ -363,7 +366,10 @@ def graph_page(request):
         body_list = list()
         body_list.append(report_list[-1][0])
         for f_value in report_list[-1][1:]:
-            body_list.append('%.3f' % f_value)
+            if f_value:
+                body_list.append('%.3f' % f_value)
+            else:
+                body_list.append('')
     else:
         body_list = None
 

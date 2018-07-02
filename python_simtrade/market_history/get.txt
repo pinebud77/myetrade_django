@@ -4,3 +4,6 @@ http://quotes.wsj.com/AAPL/historical-prices/download?MOD_VIEW=page&num_rows=100
 http://quotes.wsj.com/AMZN/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
 http://quotes.wsj.com/SBUX/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
 http://quotes.wsj.com/GE/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
+http://quotes.wsj.com/HPQ/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
+http://quotes.wsj.com/T/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
+http://quotes.wsj.com/QCOM/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
