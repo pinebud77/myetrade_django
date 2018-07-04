@@ -34,15 +34,20 @@ def get_report_list(start_date, end_date):
 
     prev_line = (0.0, ) * (1 + len(account_id_list) + len(symbol_list))
     base_values = [0.0, ] * (len(account_id_list) + len(symbol_list))
-    for day_report in DayReport.objects.filter(date__gte=start_date, date__lte=end_date).order_by('date'):
+
+    day = timezone.timedelta(1)
+    date = start_date
+    while date <= end_date:
         line = list()
-        line.append('%d/%d/%d' % (day_report.date.month, day_report.date.day, day_report.date.year))
+        line.append('%d/%d/%d' % (date.month, date.day, date.year))
         col = 1
         for account_id in account_id_list:
-            if account_id == day_report.account_id:
+            try:
+                day_report = DayReport.objects.filter(account_id=account_id, date=date)[0]
                 val = float(day_report.net_value)
-            else:
+            except IndexError:
                 val = prev_line[col] * base_values[col - 1]
+
             if base_values[col - 1] == 0.0 and val != 1.0:
                 base_values[col - 1] = val
             if base_values[col - 1]:
@@ -50,9 +55,10 @@ def get_report_list(start_date, end_date):
             else:
                 line.append(1.0)
             col += 1
+
         for symbol in symbol_list:
             try:
-                history = DayHistory.objects.filter(symbol=symbol, date=day_report.date)[0]
+                history = DayHistory.objects.filter(symbol=symbol, date__lte=date).order_by('-date')[0]
                 val = float(history.close)
             except IndexError:
                 val = None
@@ -69,6 +75,7 @@ def get_report_list(start_date, end_date):
         line_tuple = tuple(line)
         report_list.append(line_tuple)
         prev_line = line_tuple
+        date += day
 
     legends = ['date']
     for account_id in account_id_list:
@@ -170,8 +177,6 @@ def login_page(request):
 def logout_page(request):
     logout(request)
     return redirect('/stock/')
-
-
 
 
 def report_range_page(request, s_year, s_month, s_day, e_year, e_month, e_day):

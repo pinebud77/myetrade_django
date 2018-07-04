@@ -7,3 +7,16 @@ http://quotes.wsj.com/GE/historical-prices/download?MOD_VIEW=page&num_rows=10000
 http://quotes.wsj.com/HPQ/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
 http://quotes.wsj.com/T/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
 http://quotes.wsj.com/QCOM/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
+
+http://quotes.wsj.com/CBS/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
+http://quotes.wsj.com/CVX/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
+http://quotes.wsj.com/CMG/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
+http://quotes.wsj.com/CO/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
+http://quotes.wsj.com/F/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
+http://quotes.wsj.com/DLTR/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
+http://quotes.wsj.com/KMX/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
+http://quotes.wsj.com/FOXA/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
+http://quotes.wsj.com/WDC/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
+http://quotes.wsj.com/VZ/historical-prices/download?MOD_VIEW=page&num_rows=1000000&range_day=10000000&startDate=01/01/2002&endDate=12/31/2018
+
+
