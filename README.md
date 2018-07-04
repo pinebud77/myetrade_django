@@ -13,7 +13,8 @@ Done :
 * graph and report generation
 
 Installation :
-1. Required libraries(not clear now) : django, request, request_oauth, holidays, fake_useragent
+1. Required libraries(not clear now) : django, requests, requests_oauth, holidays,
+fake_useragent, tensorflow, matplotlib
 1. generate your own /myetrade_djnago/settings.py : you can refer setting.py.sample
 1. $ cd myetrade_django
 1. $ git clone https://github.com/pinebud77/python_etrade.git

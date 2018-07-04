@@ -132,8 +132,8 @@ class Stock(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     symbol = models.CharField(max_length=10)
     share = models.FloatField('budget rate in the account')
-    algorithm = models.IntegerField(choices=ALGORITHM_CHOICE)
-    stance = models.IntegerField(choices=STANCE_CHOICE)
+    algorithm = models.IntegerField(choices=ALGORITHM_CHOICE, default=ALGORITHM_MONKEY)
+    stance = models.IntegerField(choices=STANCE_CHOICE, default=STANCE_MODERATE)
     count = models.IntegerField(null=True, default=0, blank=True)
     last_count = models.FloatField(null=True, blank=True)
 
