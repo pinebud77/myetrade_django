@@ -4,11 +4,11 @@ Xvfb :99&
 export DISPLAY=:99
 
 NAME="stock"
-DJANGODIR=/home/pi/myetrade_django
+DJANGODIR=/home/pinebud/myetrade_django
 SOCKFILE=${DJANGODIR}/run/gunicorn.sock
-USER=pi
-GROUP=pi
-NUM_WORKERS=2
+USER=pinebud
+GROUP=pinebud
+NUM_WORKERS=4
 TIME_OUT=300
 DJANGO_SETTINGS_MODULE=myetrade_django.settings
 DJANGO_WSGI_MODULE=myetrade_django.wsgi
