@@ -20,7 +20,7 @@ except ImportError:
 
 try:
     from .private_algorithms import DayTrendAlgorithm, OpenCloseAlgorithm, TrendTrendAlgorithm, MLAlgorithm
-    from .private_algorithms import DTTTAlgorithm, AggDTAlgorithm, OCTrendAlgorithm, tf_learn
+    from .private_algorithms import DTTTAlgorithm, AggDTAlgorithm, OCTrendAlgorithm, tf_learn, RAvgAlgorithm
 except ImportError:
     from .algorithms import TrendAlgorithm as DayTrendAlgorithm
 
@@ -152,6 +152,7 @@ alg_dt_tt = DTTTAlgorithm()
 alg_adt = AggDTAlgorithm()
 alg_oc_trend = OCTrendAlgorithm()
 alg_ml = MLAlgorithm()
+alg_ravg = RAvgAlgorithm()
 
 
 @transaction.atomic
@@ -224,6 +225,8 @@ def run(dt=None, client=None):
                     decision = alg_oc_trend.trade_decision(stock)
                 elif stock.algorithm_string == 'ml':
                     decision = alg_ml.trade_decision(stock)
+                elif stock.algorithm_string == 'ravg':
+                    decision = alg_ravg.trade_decision(stock)
 
             logger.debug('decision=%d' % decision)
 
