@@ -2,6 +2,7 @@
 
 Xvfb :99&
 export DISPLAY=:99
+export QT_QPA_PLATFORM=minimal
 
 NAME="stock"
 DJANGODIR=/home/pinebud/myetrade_django

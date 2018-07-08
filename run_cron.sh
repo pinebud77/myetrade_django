@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export DJANGO_BASE=/home/pi/myetrade_django
+export DJANGO_BASE=/home/pinebud/myetrade_django
 
 cd ${DJANGO_BASE}
 if /usr/bin/python3 is_holiday.py; then
