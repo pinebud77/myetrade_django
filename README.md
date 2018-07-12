@@ -1,7 +1,7 @@
 Django-based MyEtrade
 =====================
 
-This is personal test for Django + my trading code.
+This is personal test for Django + my trading code. However, this looks like not a good approach at all..
 
 ToDO :
 * think more about algorithms now -_-;
