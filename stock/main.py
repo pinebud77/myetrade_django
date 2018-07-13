@@ -9,7 +9,7 @@ import python_etrade.client as etclient
 import python_simtrade.client as simclient
 from . import models
 from .algorithms import FillAlgorithm, TrendAlgorithm
-from .algorithms import MonkeyAlgorithm, EmptyAlgorithm
+from .algorithms import MonkeyAlgorithm, EmptyAlgorithm, HoldAlgorithm
 from django.utils import timezone
 from django.db import transaction
 
@@ -21,8 +21,9 @@ except ImportError:
 try:
     from .private_algorithms import DayTrendAlgorithm, OpenCloseAlgorithm, TrendTrendAlgorithm, MLAlgorithm
     from .private_algorithms import DTTTAlgorithm, AggDTAlgorithm, OCTrendAlgorithm, tf_learn, RAvgAlgorithm
+    from .private_algorithms import AggTwoAlgorithm, AhnyungAlgorithm
 except ImportError:
-    from .algorithms import TrendAlgorithm as DayTrendAlgorithm
+    pass
 
 logger = logging.getLogger('main_loop')
 MIN_HISTORY_DAYS = 30
@@ -141,18 +142,23 @@ def store_order_id(order_id):
     order_id_obj.save()
 
 
-alg_fill = FillAlgorithm()
-alg_empty = EmptyAlgorithm()
-alg_trend = TrendAlgorithm()
-alg_day_trend = DayTrendAlgorithm()
-alg_monkey = MonkeyAlgorithm()
-alg_open_close = OpenCloseAlgorithm()
-alg_trend_trend = TrendTrendAlgorithm()
-alg_dt_tt = DTTTAlgorithm()
-alg_adt = AggDTAlgorithm()
-alg_oc_trend = OCTrendAlgorithm()
-alg_ml = MLAlgorithm()
-alg_ravg = RAvgAlgorithm()
+alg_dict = {
+    'fill': FillAlgorithm(),
+    'empty': EmptyAlgorithm(),
+    'trend': TrendAlgorithm(),
+    'day_trend': DayTrendAlgorithm(),
+    'monkey': MonkeyAlgorithm(),
+    'open_close': OpenCloseAlgorithm(),
+    'trend_trend': TrendTrendAlgorithm(),
+    'dt_tt': DTTTAlgorithm(),
+    'adt': AggDTAlgorithm(),
+    'oc_trend': OCTrendAlgorithm(),
+    'ml': MLAlgorithm(),
+    'ravg': RAvgAlgorithm(),
+    'agt': AggTwoAlgorithm(),
+    'hold': HoldAlgorithm(),
+    'ahnyung': AhnyungAlgorithm(),
+}
 
 
 @transaction.atomic
@@ -202,31 +208,11 @@ def run(dt=None, client=None):
             decision = 0
             if account.mode == 'setup':
                 logger.debug('run algorithm: fill')
-                decision = alg_fill.trade_decision(stock)
+                decision = alg_dict['fill'].trade_decision(stock)
             elif account.mode == 'run':
                 logger.debug('run algorithm: %s' % stock.algorithm_string)
-                if stock.algorithm_string == 'trend':
-                    decision = alg_trend.trade_decision(stock)
-                elif stock.algorithm_string == 'day_trend':
-                    decision = alg_day_trend.trade_decision(stock)
-                elif stock.algorithm_string == 'monkey':
-                    decision = alg_monkey.trade_decision(stock)
-                elif stock.algorithm_string == 'empty':
-                    decision = alg_empty.trade_decision(stock)
-                elif stock.algorithm_string == 'open_close':
-                    decision = alg_open_close.trade_decision(stock)
-                elif stock.algorithm_string == 'trend_trend':
-                    decision = alg_trend_trend.trade_decision(stock)
-                elif stock.algorithm_string == 'dt_tt':
-                    decision = alg_dt_tt.trade_decision(stock)
-                elif stock.algorithm_string == 'adt':
-                    decision = alg_adt.trade_decision(stock)
-                elif stock.algorithm_string == 'oc_trend':
-                    decision = alg_oc_trend.trade_decision(stock)
-                elif stock.algorithm_string == 'ml':
-                    decision = alg_ml.trade_decision(stock)
-                elif stock.algorithm_string == 'ravg':
-                    decision = alg_ravg.trade_decision(stock)
+                alg = alg_dict[stock.algorithm_string]
+                decision = alg.trade_decision(stock)
 
             logger.debug('decision=%d' % decision)
 

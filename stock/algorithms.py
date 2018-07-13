@@ -122,3 +122,8 @@ class FillAlgorithm(TradeAlgorithm):
 class EmptyAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
         return -stock.count
+
+
+class HoldAlgorithm(TradeAlgorithm):
+    def trade_decision(self, stock):
+        return 0
