@@ -21,7 +21,7 @@ except ImportError:
 try:
     from .private_algorithms import DayTrendAlgorithm, OpenCloseAlgorithm, TrendTrendAlgorithm, MLAlgorithm
     from .private_algorithms import DTTTAlgorithm, AggDTAlgorithm, OCTrendAlgorithm, tf_learn, RAvgAlgorithm
-    from .private_algorithms import AggTwoAlgorithm, AhnyungAlgorithm
+    from .private_algorithms import AggTwoAlgorithm, AhnyungAlgorithm, DayTradeAlgorithm
 except ImportError:
     pass
 
@@ -158,6 +158,7 @@ alg_dict = {
     'agt': AggTwoAlgorithm(),
     'hold': HoldAlgorithm(),
     'ahnyung': AhnyungAlgorithm(),
+    'daytrade': DayTradeAlgorithm(),
 }
 
 

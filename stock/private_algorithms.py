@@ -4,7 +4,7 @@ import logging
 import random
 from . import models
 from os.path import join, dirname, realpath
-from .algorithms import TradeAlgorithm, buy_all
+from .algorithms import TradeAlgorithm, buy_all, sell_all
 from django.utils import timezone
 
 try:
@@ -683,6 +683,35 @@ class MLAlgorithm(TradeAlgorithm):
             return -stock.count
 
         return 0
+
+
+daytrade_variables = (
+    {'in_rate': 0.987},     # conservative
+    {'in_rate': 0.990},     # moderate
+    {'in_rate': 0.993},     # aggressive
+)
+
+
+class DayTradeAlgorithm(TradeAlgorithm):
+    def trade_decision(self, stock):
+        in_rate = daytrade_variables[stock.stance]['in_rate']
+
+        logger.debug('evaluating: ' + stock.symbol)
+
+        try:
+            history = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')[0]
+            prev_price = history.open
+        except IndexError:
+            logger.debug('no history yet')
+            prev_price = stock.value
+
+        if not stock.count:
+            if stock.value < prev_price * in_rate:
+                return buy_all(stock)
+            else:
+                return 0
+        else:
+            return sell_all(stock)
 
 
 ahnyung_variables = (

@@ -23,6 +23,10 @@ def buy_all(stock):
     return int(budget / stock.value)
 
 
+def sell_all(stock):
+    return -stock.count
+
+
 class TradeAlgorithm:
     def trade_decision(self, stock):
         return 0

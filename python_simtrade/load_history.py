@@ -71,7 +71,7 @@ def load_web(symbol):
         day_history.high = float(row[2])
         day_history.low = float(row[3])
         day_history.close = float(row[4])
-        day_history.volume = int(row[5])
+        day_history.volume = int(float(row[5]))
         day_history.save()
 
 
@@ -83,6 +83,6 @@ def load_data():
 
     for symbol in symbols:
         logging.info(symbol)
-        #load_web(symbol)
+        load_web(symbol)
         #sleep(2)
-        load_csv(symbol)
+        #load_csv(symbol)
