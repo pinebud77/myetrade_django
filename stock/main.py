@@ -215,7 +215,7 @@ def run(dt=None, client=None):
                 alg = alg_dict[stock.algorithm_string]
                 decision = alg.trade_decision(stock)
 
-            logger.debug('decision=%d' % decision)
+            logger.info('%s: decision=%d' % (stock.symbol, decision))
 
             if decision != 0:
                 stock.last_count = stock.count

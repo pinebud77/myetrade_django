@@ -686,9 +686,9 @@ class MLAlgorithm(TradeAlgorithm):
 
 
 daytrade_variables = (
-    {'in_rate': 0.987},     # conservative
-    {'in_rate': 0.990},     # moderate
-    {'in_rate': 0.993},     # aggressive
+    {'in_rate': 0.998},     # conservative
+    {'in_rate': 0.999},     # moderate
+    {'in_rate': 1.000},     # aggressive
 )
 
 
