@@ -5,6 +5,7 @@ import random
 from . import models
 from os.path import join, dirname, realpath
 from .algorithms import TradeAlgorithm, buy_all, sell_all
+from .models import ACTION_BUY
 from django.utils import timezone
 
 try:
@@ -715,9 +716,9 @@ class DayTradeAlgorithm(TradeAlgorithm):
 
 
 ahnyung_variables = (
-    {'in_rate': 0.940, 'out_rate': 1.05, 'emergency_rate': 0.955, 'days': 3},    # conservative
-    {'in_rate': 0.950, 'out_rate': 1.04, 'emergency_rate': 0.960, 'days': 2},    # moderate
-    {'in_rate': 0.960, 'out_rate': 1.03, 'emergency_rate': 0.965, 'days': 1},    # aggressive
+    {'in_rate': 0.982, 'out_rate': 1.015},    # conservative
+    {'in_rate': 0.995, 'out_rate': 1.010},    # moderate
+    {'in_rate': 0.999, 'out_rate': 1.005},    # aggressive
 )
 
 
@@ -725,48 +726,32 @@ class AhnyungAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
         in_rate = ahnyung_variables[stock.stance]['in_rate']
         out_rate = ahnyung_variables[stock.stance]['out_rate']
-        emergency_rate = ahnyung_variables[stock.stance]['emergency_rate']
-        days = ahnyung_variables[stock.stance]['days']
 
         logger.debug('evaluating: ' + stock.symbol)
 
         try:
             prev_order = models.Order.objects.filter(symbol=stock.symbol,
-                                                     account_id=stock.account.id).order_by('-dt')[0]
+                                                     account_id=stock.account.id,
+                                                     action=ACTION_BUY).order_by('-dt')[0]
+            prev_buy = prev_order.price
         except IndexError:
             logger.debug('buy: no previous order')
             return buy_all(stock)
 
         try:
-            histories = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')[:days]
-            total = 0.0
-            for history in histories:
-                total += history.open
-            prev_price = total / days
+            history = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')[0]
+            prev_price = history.open
         except IndexError:
-            logger.debug('no history set yesterday open same as today')
+            logger.debug('no history')
             prev_price = stock.value
 
         if not stock.count:
-            if stock.value < prev_order.price * in_rate:
-                logger.debug('buy: stock value low')
+            if stock.value < prev_price * in_rate:
                 return buy_all(stock)
+            else:
+                return 0
 
-            delta = timezone.now() - prev_order.dt
-            if delta >= timezone.timedelta(days) and prev_price <= stock.value:
-                logger.debug('buy: up trend?')
-                return buy_all(stock)
+        if stock.value > prev_buy * out_rate:
+            return sell_all(stock)
 
-            logger.debug('hold to buy')
-            return 0
-
-        if stock.value > prev_order.price * out_rate:
-            logger.debug('sell: stock value high enough')
-            return -stock.count
-
-        if stock.value < prev_order.price * emergency_rate:
-            logger.debug('sell: stock value too low')
-            return -stock.count
-
-        logger.debug('hold to sell')
         return 0
