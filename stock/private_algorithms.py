@@ -716,9 +716,9 @@ class DayTradeAlgorithm(TradeAlgorithm):
 
 
 ahnyung_variables = (
-    {'in_rate': 0.982, 'out_rate': 1.015},    # conservative
-    {'in_rate': 0.995, 'out_rate': 1.010},    # moderate
-    {'in_rate': 0.999, 'out_rate': 1.005},    # aggressive
+    {'in_rate': 0.982, 'out_rate': 1.018},    # conservative
+    {'in_rate': 0.995, 'out_rate': 1.005},    # moderate
+    {'in_rate': 0.998, 'out_rate': 1.002},    # aggressive
 )
 
 
@@ -736,7 +736,7 @@ class AhnyungAlgorithm(TradeAlgorithm):
             prev_buy = prev_order.price
         except IndexError:
             logger.debug('buy: no previous order')
-            return buy_all(stock)
+            prev_buy = stock.value
 
         try:
             history = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')[0]
