@@ -8,8 +8,8 @@ import holidays
 import python_etrade.client as etclient
 import python_simtrade.client as simclient
 from . import models
-from .algorithms import FillAlgorithm, TrendAlgorithm
-from .algorithms import MonkeyAlgorithm, EmptyAlgorithm, HoldAlgorithm
+from .algorithms import TrendAlgorithm
+from .algorithms import MonkeyAlgorithm, EmptyAlgorithm, FillAlgorithm
 from django.utils import timezone
 from django.db import transaction
 
@@ -156,7 +156,7 @@ alg_dict = {
     'ml': MLAlgorithm(),
     'ravg': RAvgAlgorithm(),
     'agt': AggTwoAlgorithm(),
-    'hold': HoldAlgorithm(),
+    'fill': FillAlgorithm(),
     'ahnyung': AhnyungAlgorithm(),
     'daytrade': DayTradeAlgorithm(),
 }

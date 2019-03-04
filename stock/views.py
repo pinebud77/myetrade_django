@@ -59,7 +59,7 @@ def get_report_list(start_date, end_date):
         for symbol in symbol_list:
             try:
                 history = DayHistory.objects.filter(symbol=symbol, date__lte=date).order_by('-date')[0]
-                val = float(history.close)
+                val = float(history.open)
             except IndexError:
                 val = None
             if base_values[col - 1] == 0.0 and val != 1.0 and val is not None:

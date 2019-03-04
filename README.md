@@ -5,6 +5,7 @@ This is personal test for Django + my trading code. However, this looks like not
 
 ToDO :
 * think more about algorithms now -_-;
+* modify the way the algorithms list is used
 * bugfix : there are plenty of bugs yet.. (too many bugs!!! too many bugs!!)
 
 Done :
