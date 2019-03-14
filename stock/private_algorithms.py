@@ -796,4 +796,14 @@ class AhnyungAlgorithm(TradeAlgorithm):
         return 0
 
 
+private_algorithm_list.append(DTTTAlgorithm)
+private_algorithm_list.append(TrendTrendAlgorithm)
+private_algorithm_list.append(OpenCloseAlgorithm)
+private_algorithm_list.append(OCTrendAlgorithm)
+private_algorithm_list.append(DayTrendAlgorithm)
+private_algorithm_list.append(AggDTAlgorithm)
+private_algorithm_list.append(AggTwoAlgorithm)
+private_algorithm_list.append(RAvgAlgorithm)
+private_algorithm_list.append(MLAlgorithm)
+private_algorithm_list.append(DayTradeAlgorithm)
 private_algorithm_list.append(AhnyungAlgorithm)

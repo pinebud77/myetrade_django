@@ -148,7 +148,9 @@ class HoldAlgorithm(TradeAlgorithm):
         return 0
 
 
-algorithm_list.append(MonkeyAlgorithm)
 algorithm_list.append(FillAlgorithm)
 algorithm_list.append(EmptyAlgorithm)
 algorithm_list.append(HoldAlgorithm)
+algorithm_list.append(MonkeyAlgorithm)
+algorithm_list.append(TrendAlgorithm)
+
