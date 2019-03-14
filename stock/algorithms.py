@@ -10,6 +10,9 @@ logger = logging.getLogger('algorithms')
 TREND_CONFIG = join(dirname(realpath(__file__)),'trend_alg_config.pickle')
 
 
+algorithm_list = []
+
+
 CONSERVATIVE = 0
 MODERATE = 1
 AGGRESSIVE = 2          # more frequent trading
@@ -28,6 +31,8 @@ def sell_all(stock):
 
 
 class TradeAlgorithm:
+    name = None
+
     def trade_decision(self, stock):
         return 0
 
@@ -41,6 +46,8 @@ MIN_HISTORY = 10
 
 
 class TrendAlgorithm(TradeAlgorithm):
+    name = 'Trend'
+
     def trade_decision(self, stock):
         try:
             pause_dict = pickle.load(open(TREND_CONFIG, 'rb'))
@@ -95,6 +102,8 @@ class TrendAlgorithm(TradeAlgorithm):
 
 
 class MonkeyAlgorithm(TradeAlgorithm):
+    name = 'Monkey'
+
     def trade_decision(self, stock):
         logger.debug('kikikik')
         val = random.random()
@@ -110,6 +119,8 @@ class MonkeyAlgorithm(TradeAlgorithm):
 
 
 class FillAlgorithm(TradeAlgorithm):
+    name = 'Fill'
+
     def trade_decision(self, stock):
         total_value = stock.get_total_value()
         if total_value is None:
@@ -124,10 +135,20 @@ class FillAlgorithm(TradeAlgorithm):
 
 
 class EmptyAlgorithm(TradeAlgorithm):
+    name = 'Empty'
+
     def trade_decision(self, stock):
         return -stock.count
 
 
 class HoldAlgorithm(TradeAlgorithm):
+    name = 'Hold'
+
     def trade_decision(self, stock):
         return 0
+
+
+algorithm_list.append(MonkeyAlgorithm)
+algorithm_list.append(FillAlgorithm)
+algorithm_list.append(EmptyAlgorithm)
+algorithm_list.append(HoldAlgorithm)

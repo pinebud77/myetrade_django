@@ -8,20 +8,18 @@ import holidays
 import python_etrade.client as etclient
 import python_simtrade.client as simclient
 from . import models
-from .algorithms import TrendAlgorithm
-from .algorithms import MonkeyAlgorithm, EmptyAlgorithm, FillAlgorithm
 from django.utils import timezone
 from django.db import transaction
+from .algorithms import algorithm_list
+
+try:
+    from .private_algorithms import private_algorithm_list, tf_learn
+except ImportError:
+    tf_learn = None
+    private_algorithm_list = None
 
 try:
     from .config import *
-except ImportError:
-    pass
-
-try:
-    from .private_algorithms import DayTrendAlgorithm, OpenCloseAlgorithm, TrendTrendAlgorithm, MLAlgorithm
-    from .private_algorithms import DTTTAlgorithm, AggDTAlgorithm, OCTrendAlgorithm, tf_learn, RAvgAlgorithm
-    from .private_algorithms import AggTwoAlgorithm, AhnyungAlgorithm, DayTradeAlgorithm
 except ImportError:
     pass
 
@@ -30,13 +28,10 @@ MIN_HISTORY_DAYS = 30
 
 
 def load_db_account(db_account, account):
-    account.mode = models.MODE_CHOICE[db_account.mode][1]
+    pass
 
 
 def store_db_account(db_account, account):
-    for en in models.MODE_CHOICE:
-        if en[1] == account.mode:
-            db_account.mode = en[0]
     db_account.net_value = account.net_value
     db_account.cash_to_trade = account.cash_to_trade
     db_account.save()
@@ -44,8 +39,7 @@ def store_db_account(db_account, account):
 
 def load_db_stock(db_stock, stock):
     stock.budget = stock.account.net_value * db_stock.share
-    stock.algorithm_string = models.ALGORITHM_CHOICE[db_stock.algorithm][1]
-
+    stock.algorithm = db_stock.algorithm
     stock.stance = db_stock.stance
     stock.last_count = db_stock.last_count
 
@@ -142,24 +136,15 @@ def store_order_id(order_id):
     order_id_obj.save()
 
 
-alg_dict = {
-    'fill': FillAlgorithm(),
-    'empty': EmptyAlgorithm(),
-    'trend': TrendAlgorithm(),
-    'day_trend': DayTrendAlgorithm(),
-    'monkey': MonkeyAlgorithm(),
-    'open_close': OpenCloseAlgorithm(),
-    'trend_trend': TrendTrendAlgorithm(),
-    'dt_tt': DTTTAlgorithm(),
-    'adt': AggDTAlgorithm(),
-    'oc_trend': OCTrendAlgorithm(),
-    'ml': MLAlgorithm(),
-    'ravg': RAvgAlgorithm(),
-    'agt': AggTwoAlgorithm(),
-    'fill': FillAlgorithm(),
-    'ahnyung': AhnyungAlgorithm(),
-    'daytrade': DayTradeAlgorithm(),
-}
+def get_algorithm(num):
+    if num < len(algorithm_list):
+        return algorithm_list[num]()
+
+    num -= len(algorithm_list)
+    if private_algorithm_list and num < len(private_algorithm_list):
+        return private_algorithm_list[num]()
+
+    return None
 
 
 @transaction.atomic
@@ -206,15 +191,13 @@ def run(dt=None, client=None):
 
             load_db_stock(db_stock, stock)
 
-            decision = 0
-            if account.mode == 'setup':
-                logger.debug('run algorithm: fill')
-                decision = alg_dict['fill'].trade_decision(stock)
-            elif account.mode == 'run':
-                logger.debug('run algorithm: %s' % stock.algorithm_string)
-                alg = alg_dict[stock.algorithm_string]
-                decision = alg.trade_decision(stock)
+            alg = get_algorithm(stock.algorithm)
+            if not alg:
+                logger.error('there is no such algorithm index: %d' % stock.algorithm)
+                continue
 
+            logger.debug('run algorithm: %s' % alg.__class__.name)
+            decision = alg.trade_decision(stock)
             logger.info('%s: decision=%d' % (stock.symbol, decision))
 
             if decision != 0:
@@ -254,7 +237,6 @@ def simulate(start_date=None, end_date=None):
     models.DayHistory.objects.all().delete()
 
     for db_account in models.Account.objects.all():
-        db_account.mode = models.MODE_RUN
         db_account.save()
 
         for db_stock in models.Stock.objects.filter(account=db_account):

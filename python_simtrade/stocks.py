@@ -35,7 +35,7 @@ class Stock:
         self.value = None
         self.last_count = 0
         self.budget = 0.0
-        self.algorithm_string = 'ahnyung'
+        self.algorithm = 0
         self.stance = 0
         self.valid = True
         self.failure_reason = 'success'

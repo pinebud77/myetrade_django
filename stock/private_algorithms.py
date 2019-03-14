@@ -5,8 +5,6 @@ import random
 from . import models
 from os.path import join, dirname, realpath
 from .algorithms import TradeAlgorithm, buy_all, sell_all
-from .models import ACTION_BUY
-from django.utils import timezone
 
 try:
     import numpy as np
@@ -16,8 +14,18 @@ try:
 except ImportError:
     no_tf = True
 
+
+ACTION_BUY = 0
+ACTION_SELL = 1
+ACTION_BUY_FAIL = 2
+ACTION_SELL_FAIL = 3
+
+
 logger = logging.getLogger('algorithms')
 TF_STORE_FILE = join(dirname(realpath(__file__)), 'tf_model')
+
+
+private_algorithm_list = []
 
 
 DIRECTION_UP = 0
@@ -34,6 +42,8 @@ dttt_variables = [
 
 
 class DTTTAlgorithm(TradeAlgorithm):
+    name = 'DTTT'
+
     def trade_decision(self, stock):
         try:
             last_order = models.Order.objects.filter(symbol=stock.symbol).order_by('-dt')[0]
@@ -115,6 +125,8 @@ tt_variables = [
 
 
 class TrendTrendAlgorithm(TradeAlgorithm):
+    name = 'TrendTrend'
+
     def trade_decision(self, stock):
         try:
             last_order = models.Order.objects.filter(symbol=stock.symbol).order_by('-dt')[0]
@@ -192,6 +204,8 @@ oc_variables = [
 
 
 class OpenCloseAlgorithm(TradeAlgorithm):
+    name = 'OpenClose'
+
     def trade_decision(self, stock):
         day_histories = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')[:OC_MIN_HISTORY]
         if len(day_histories) < OC_MIN_HISTORY:
@@ -242,6 +256,8 @@ oct_variables = (
 
 
 class OCTrendAlgorithm(TradeAlgorithm):
+    name = 'OCTrend'
+
     def trade_decision(self, stock):
         day_histories = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')[:OCT_MIN_HISTORY]
         if len(day_histories) < OCT_MIN_HISTORY:
@@ -294,6 +310,8 @@ dt_variables = [
 
 
 class DayTrendAlgorithm(TradeAlgorithm):
+    name = 'DayTrend'
+
     def trade_decision(self, stock):
         logger.debug('evaluating: %s' % stock.symbol)
 
@@ -342,6 +360,8 @@ adt_variables = [
 
 
 class AggDTAlgorithm(TradeAlgorithm):
+    name = 'AggDT'
+
     def trade_decision(self, stock):
         one_buy_rate = adt_variables[stock.stance]['one_buy_rate']
         one_sell_rate = adt_variables[stock.stance]['one_sell_rate']
@@ -390,6 +410,8 @@ class AggDTAlgorithm(TradeAlgorithm):
 
 
 class AggTwoAlgorithm(TradeAlgorithm):
+    name = 'AggTwo'
+
     def trade_decision(self, stock):
         one_buy_rate = adt_variables[stock.stance]['one_buy_rate']
         one_sell_rate = adt_variables[stock.stance]['one_sell_rate']
@@ -453,6 +475,8 @@ ra_variables = (
 
 
 class RAvgAlgorithm(TradeAlgorithm):
+    name = 'RAvg'
+
     def trade_decision(self, stock):
         days = ra_variables[stock.stance]['days']
 
@@ -618,6 +642,8 @@ def tf_learn(start_date, end_date):
 
 
 class MLAlgorithm(TradeAlgorithm):
+    name = 'MachineLearning'
+
     def trade_decision(self, stock):
         logger.debug('evaluating: %s' % stock.symbol)
         global n_steps
@@ -694,6 +720,8 @@ daytrade_variables = (
 
 
 class DayTradeAlgorithm(TradeAlgorithm):
+    name = 'DayTrade'
+
     def trade_decision(self, stock):
         in_rate = daytrade_variables[stock.stance]['in_rate']
 
@@ -724,6 +752,8 @@ ahnyung_variables = (
 
 
 class AhnyungAlgorithm(TradeAlgorithm):
+    name = 'Ahnyung'
+
     def trade_decision(self, stock):
         in_rate = ahnyung_variables[stock.stance]['in_rate']
         out_rate = ahnyung_variables[stock.stance]['out_rate']
@@ -764,3 +794,6 @@ class AhnyungAlgorithm(TradeAlgorithm):
             return buy_all(stock)
 
         return 0
+
+
+private_algorithm_list.append(AhnyungAlgorithm)

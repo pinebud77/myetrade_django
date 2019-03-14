@@ -1,4 +1,14 @@
 from django.db import models
+from .algorithms import algorithm_list
+
+try:
+    from .private_algorithms import private_algorithm_list, ACTION_BUY, ACTION_SELL, ACTION_BUY_FAIL, ACTION_SELL_FAIL
+except ImportError:
+    private_algorithm_list = None
+    ACTION_BUY = 0
+    ACTION_SELL = 1
+    ACTION_BUY_FAIL = 2
+    ACTION_SELL_FAIL = 3
 
 
 class Quote(models.Model):
@@ -50,31 +60,16 @@ class SimHistory(models.Model):
                   self.open, self.high, self.low, self.close, self.volume)
 
 
-MODE_SETUP = 0
-MODE_RUN = 1
-MODE_STOP = 2
-MODE_CHOICE = (
-    (MODE_SETUP, 'setup'),
-    (MODE_RUN, 'run'),
-    (MODE_STOP, 'stop'),
-)
-
-
 class Account(models.Model):
     account_id = models.IntegerField(primary_key=True)
-    mode = models.IntegerField(default='setup', choices=MODE_CHOICE)
     net_value = models.FloatField(null=True, blank=True)
     cash_to_trade = models.FloatField(null=True, blank=True)
 
     def __str__(self):
-        mode_string = 'unknown'
-        for en in MODE_CHOICE:
-            if en[0] == self.mode:
-                mode_string = en[1]
         if self.net_value:
-            return '%d: %s = %f' % (self.account_id, mode_string, self.net_value)
+            return '%d: %f' % (self.account_id, self.net_value)
         else:
-            return '%d: %s = 0.0' % (self.account_id, mode_string)
+            return '%d: 0.0' % (self.account_id)
 
 
 class DayReport(models.Model):
@@ -103,48 +98,33 @@ STANCE_CHOICE = (
     (STANCE_AGGRESSIVE, 'aggressive'),
 )
 
-ALGORITHM_MONKEY = 0
-ALGORITHM_TREND = 1
-ALGORITHM_DAY_TREND = 2
-ALGORITHM_OPEN_CLOSE = 3
-ALGORITHM_TREND_TREND = 4
-ALGORITHM_DT_TT = 5
-ALGORITHM_ADT = 6
-ALGORITHM_OC_TREND = 7
-ALGORITHM_ML = 8
-ALGORITHM_RAVG = 9
-ALGORITHM_AGT = 10
-ALGORITHM_EMPTY = 11
-ALGORITHM_FILL = 12
-ALGORITHM_AHNYUNG = 13
-ALGORITHM_DAYTRADE = 14
-ALGORITHM_CHOICE = (
-    (ALGORITHM_MONKEY, 'monkey'),
-    (ALGORITHM_TREND, 'trend'),
-    (ALGORITHM_DAY_TREND, 'day_trend'),
-    (ALGORITHM_OPEN_CLOSE, 'open_close'),
-    (ALGORITHM_TREND_TREND, 'trend_trend'),
-    (ALGORITHM_DT_TT, 'dt_tt'),
-    (ALGORITHM_ADT, 'adt'),
-    (ALGORITHM_OC_TREND, 'oc_trend'),
-    (ALGORITHM_ML, 'ml'),
-    (ALGORITHM_RAVG, 'ravg'),
-    (ALGORITHM_AGT, 'agt'),
-    (ALGORITHM_EMPTY, 'empty'),
-    (ALGORITHM_FILL, 'fill'),
-    (ALGORITHM_AHNYUNG, 'ahnyung'),
-    (ALGORITHM_DAYTRADE, 'daytrade'),
-)
+
+def get_alg_choice():
+    alg_choice = []
+
+    num = 0
+    for alg in algorithm_list:
+        alg_choice.append((num, alg.name))
+        num += 1
+
+    if private_algorithm_list:
+        for alg in private_algorithm_list:
+            alg_choice.append((num, alg.name))
+            num += 1
+
+    return alg_choice
 
 
 class Stock(models.Model):
     class Meta:
         unique_together = (('account', 'symbol'),)
 
+    alg_choice = get_alg_choice()
+
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     symbol = models.CharField(max_length=10)
     share = models.FloatField('budget rate in the account')
-    algorithm = models.IntegerField(choices=ALGORITHM_CHOICE)
+    algorithm = models.IntegerField(choices=alg_choice)
     stance = models.IntegerField(choices=STANCE_CHOICE)
     count = models.IntegerField(null=True, default=0, blank=True)
     last_count = models.FloatField(null=True, blank=True)
