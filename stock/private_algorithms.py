@@ -715,10 +715,11 @@ class DayTradeAlgorithm(TradeAlgorithm):
             return sell_all(stock)
 
 
+AHNYUNG_DAYS = 10
 ahnyung_variables = (
-    {'in_rate': 0.982, 'out_rate': 1.018},    # conservative
-    {'in_rate': 0.995, 'out_rate': 1.005},    # moderate
-    {'in_rate': 0.998, 'out_rate': 1.002},    # aggressive
+    {'in_rate': 0.980, 'out_rate': 1.020},    # conservative
+    {'in_rate': 0.990, 'out_rate': 1.010},    # moderate
+    {'in_rate': 0.995, 'out_rate': 1.005},    # aggressive
 )
 
 
@@ -738,20 +739,28 @@ class AhnyungAlgorithm(TradeAlgorithm):
             logger.debug('buy: no previous order')
             prev_buy = stock.value
 
-        try:
-            history = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')[0]
-            prev_price = history.open
-        except IndexError:
-            logger.debug('no history')
-            prev_price = stock.value
+        histories = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')
+        if not histories:
+            logger.info('no previous price history')
+            return 0
 
-        if not stock.count:
-            if stock.value < prev_price * in_rate:
-                return buy_all(stock)
+        if len(histories) > AHNYUNG_DAYS:
+            histories = histories[:AHNYUNG_DAYS]
+
+        if stock.count:
+            if stock.value > prev_buy * out_rate:
+                return sell_all(stock)
             else:
                 return 0
 
-        if stock.value > prev_buy * out_rate:
-            return sell_all(stock)
+        top_price = stock.value
+        for history in histories:
+            if history.open > top_price:
+                top_price = history.open
+            else:
+                break
+
+        if top_price * in_rate > stock.value:
+            return buy_all(stock)
 
         return 0
