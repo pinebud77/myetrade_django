@@ -766,7 +766,7 @@ class AhnyungAlgorithm(TradeAlgorithm):
                                                      action=ACTION_BUY).order_by('-dt')[0]
             prev_buy = prev_order.price
         except IndexError:
-            logger.debug('buy: no previous order')
+            logger.debug('no previous order')
             prev_buy = stock.value
 
         histories = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')
@@ -789,6 +789,9 @@ class AhnyungAlgorithm(TradeAlgorithm):
                 top_price = history.open
             else:
                 break
+
+        logger.debug('top price %f' % top_price)
+        logger.debug('price %f' % stock.value)
 
         if top_price * in_rate > stock.value:
             return buy_all(stock)
