@@ -523,69 +523,78 @@ class RAvgAlgorithm(TradeAlgorithm):
 alg_sess = None
 alg_x = None
 alg_outputs = None
-ml_variables = (
-    {'threshold': 0.006},      # conservative
-    {'threshold': 0.004},      # moderate
-    {'threshold': 0.002},      # aggressive
-)
 
-n_steps = 20
-n_inputs = 2
-n_neurons = 150
+n_steps = 19
+n_inputs = 4
+n_neurons = 128
+n_layers = 3
 n_outputs = n_inputs
 
 
 def next_batch(sample_list, batch_size, steps):
-    batch_list = list()
+    x_list = list()
+    y_list = list()
     for n in range(batch_size):
-        line = list()
+        symbol_list = random.choice(sample_list)
+        start = random.randint(0, len(symbol_list) - steps - 1)
 
-        sample = random.choice(sample_list)
-        open_list = sample[0]
-        volume_list = sample[1]
+        last_open = symbol_list[start + steps - 1][0]
+        one_x = list()
+        for day_num in range(start, start + steps):
+            day_list = symbol_list[day_num]
+            one_x.append((day_list[0] / last_open - 1,
+                          day_list[1] / last_open - 1,
+                          day_list[2] / last_open - 1,
+                          day_list[3] / last_open - 1,))
 
-        start = random.randint(0, len(open_list) - steps - 2)
-        start_volume = volume_list[start]
-        if not start_volume:
-            logger.warning('volume or price is 0 in training data')
-            continue
+        x_list.append(one_x)
 
-        batch_list.append(line)
-        for i in range(steps + 1):
-            line.append((open_list[start + i], volume_list[start + i] / start_volume,))
+        day_list = symbol_list[start + steps]
+        y_list.append((day_list[0] / last_open - 1,
+                       day_list[1] / last_open - 1,
+                       day_list[2] / last_open - 1,
+                       day_list[3] / last_open - 1,))
 
-    batch_array = np.array(batch_list)
-    global n_inputs
+    x_list = np.array(x_list)
+    y_list = np.array(y_list)
 
-    return batch_array[:, :-1].reshape(-1, steps, n_inputs), batch_array[:, 1:].reshape(-1, steps, n_inputs)
+    return x_list, y_list
 
 
 def tf_learn(start_date, end_date):
     if no_tf:
         return None
 
-    symbol_list = list()
+    symbol_name_list = list()
     symbols = models.SimHistory.objects.all().values('symbol').distinct()
     for symbol_dict in symbols:
-        symbol_list.append(symbol_dict['symbol'])
+        symbol_name_list.append(symbol_dict['symbol'])
 
     global n_steps, n_inputs, n_neurons, n_outputs
 
-    learning_rate = 0.0001
-    n_iterations = 10000
+    learning_rate = 0.0002
+    n_iterations = 5000
     batch_size = 50
 
     tf.reset_default_graph()
 
     x = tf.placeholder(tf.float32, [None, n_steps, n_inputs], 'x')
-    y = tf.placeholder(tf.float32, [None, n_steps, n_outputs], 'y')
+    y = tf.placeholder(tf.float32, [None, n_outputs], 'y')
 
-    cell = tf.contrib.rnn.OutputProjectionWrapper(tf.contrib.rnn.BasicRNNCell(num_units=n_neurons,
-                                                                              activation=tf.nn.relu),
-                                                  output_size=n_outputs)
-    outputs, states = tf.nn.dynamic_rnn(cell, x, dtype=tf.float32)
+    #layers = [tf.contrib.rnn.BasicRNNCell(num_units=n_neurons, activation=tf.nn.elu)
+    #          for _ in range(n_layers)]
+    layers = [tf.contrib.rnn.BasicLSTMCell(num_units=n_neurons, activation=tf.nn.elu)
+              for _ in range(n_layers)]
+    multi_layer_cell = tf.contrib.rnn.MultiRNNCell(layers)
+    outputs, states = tf.nn.dynamic_rnn(multi_layer_cell, x, dtype=tf.float32)
 
-    weights = tf.constant([[[1.0, 0]] * n_steps])
+    stacked_rnn_outputs = tf.reshape(outputs, [-1, n_neurons])
+    stacked_outputs = tf.layers.dense(stacked_rnn_outputs, n_outputs)
+    outputs = tf.reshape(stacked_outputs, [-1, n_steps, n_outputs])
+    outputs = outputs[:, n_steps-1, :]
+
+    #weights = tf.constant([[0.9, 0.04, 0.03, 0.03]])
+    weights = tf.constant([[1.0, 0, 0, 0]])
     loss = tf.losses.mean_squared_error(outputs, y, weights=weights)
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     training_op = optimizer.minimize(loss)
@@ -596,39 +605,35 @@ def tf_learn(start_date, end_date):
     sess.run(init_op)
 
     sample_list = list()
-    for symbol in symbol_list:
+    for symbol in symbol_name_list:
         print('loading %s' % symbol)
-        open_list = list()
-        volume_list = list()
-
         sim_histories = models.SimHistory.objects.filter(symbol=symbol,
                                                          date__gte=start_date,
                                                          date__lte=end_date).order_by('date')
-        for n in range(1, len(sim_histories)):
-            today = sim_histories[n]
-            yesterday = sim_histories[n-1]
-            open_list.append((today.open - yesterday.open) / yesterday.open)
-            volume_list.append(yesterday.volume)
+        symbol_list = list()
+        for today in sim_histories:
+            today_list = (today.open, today.close, today.high, today.low, )
+            symbol_list.append(today_list)
 
-        if len(open_list) < n_steps + 1:
+        if len(symbol_list) < n_steps + 1:
             logger.error('price data is not enough')
             continue
 
-        sample_list.append((open_list, volume_list,))
+        sample_list.append(symbol_list)
+
+    sample_list = np.array(sample_list)
 
     for iteration in range(n_iterations):
         x_batch, y_batch = next_batch(sample_list, batch_size, n_steps)
 
         sess.run(training_op, feed_dict={x: x_batch, y: y_batch})
         if iteration % 100 == 0:
+            print('x_batch[0]')
+            print(x_batch[0])
+            print('y_batch[0]')
+            print(y_batch[0])
             mse = loss.eval(feed_dict={x: x_batch, y: y_batch}, session=sess)
             print('%d\tMSE:%f' % (iteration, mse))
-            x_batch_re = x_batch[0].reshape(-1, n_steps, n_inputs)
-            o = sess.run(outputs, feed_dict={x: x_batch_re})
-            y_batch_re = y_batch[0].reshape(-1, n_steps, n_inputs)
-            print('\tsample: real %f, pred %f, error %f' % (y_batch_re[0][-1][0],
-                                                    o[0][-1][0],
-                                                    y_batch_re[0][-1][0] - o[0][-1][0]))
 
     saver = tf.train.Saver()
     saver.save(sess, TF_STORE_FILE)
@@ -639,6 +644,13 @@ def tf_learn(start_date, end_date):
     alg_outputs = outputs
 
     logger.info('loaded learning set')
+
+
+ml_variables = (
+    {'threshold': 0.006},      # conservative
+    {'threshold': 0.004},      # moderate
+    {'threshold': 0.002},      # aggressive
+)
 
 
 class MLAlgorithm(TradeAlgorithm):
@@ -659,21 +671,9 @@ class MLAlgorithm(TradeAlgorithm):
 
         threshold = ml_variables[stock.stance]['threshold']
 
-        open_list = list()
-        volume_list = list()
-        start_volume = histories[n_steps-1].volume
-        open_list.append((stock.value - histories[0].open) / histories[0].open)
-        for n in range(len(histories) + 1):
-            today = histories[n]
-            volume_list.append(today.volume / start_volume)
-            if n == len(histories) - 1:
-                break
-            yesterday = histories[n+1]
-            open_list.append((today.open - yesterday.open) / yesterday.open)
-
         x_list = list()
-        for n in range(len(open_list)):
-            x_list.append((open_list[n], volume_list[n],))
+        for today in histories:
+            x_list.append((today.open, today.close, today.high, today.low,))
 
         global n_inputs, n_neurons
         global alg_x, alg_outputs, alg_sess
@@ -681,10 +681,18 @@ class MLAlgorithm(TradeAlgorithm):
         if alg_sess is None:
             tf.reset_default_graph()
             alg_x = tf.placeholder(tf.float32, [None, n_steps, n_inputs], 'x')
-            cell = tf.contrib.rnn.OutputProjectionWrapper(tf.contrib.rnn.BasicRNNCell(num_units=n_neurons,
-                                                                                      activation=tf.nn.relu),
-                                                          output_size=n_outputs)
-            alg_outputs, states = tf.nn.dynamic_rnn(cell, alg_x, dtype=tf.float32)
+
+            #layers = [tf.contrib.rnn.BasicRNNCell(num_units=n_neurons, activation=tf.nn.elu)
+            #          for _ in range(n_layers)]
+            layers = [tf.contrib.rnn.BasicLSTMCell(num_units=n_neurons, activation=tf.nn.elu)
+                      for _ in range(n_layers)]
+            multi_layer_cell = tf.contrib.rnn.MultiRNNCell(layers)
+            outputs, states = tf.nn.dynamic_rnn(multi_layer_cell, alg_x, dtype=tf.float32)
+
+            stacked_rnn_outputs = tf.reshape(outputs, [-1, n_neurons])
+            stacked_outputs = tf.layers.dense(stacked_rnn_outputs, n_outputs)
+            outputs = tf.reshape(stacked_outputs, [-1, n_steps, n_outputs])
+            alg_outputs = outputs[:, n_steps-1, :]
 
             alg_sess = tf.Session()
             init_op = tf.group(tf.global_variables_initializer(),
@@ -694,11 +702,20 @@ class MLAlgorithm(TradeAlgorithm):
             saver.restore(alg_sess, TF_STORE_FILE)
 
         x_new = np.array(x_list)
+        x_new /= x_new[0][0]
+        x_new = x_new - 1
         x_new = np.flip(x_new, 0)
+
         x_new = x_new.reshape(-1, n_steps, n_inputs)
         res = alg_sess.run(alg_outputs, feed_dict={alg_x: x_new})
 
-        y_gap = res[0][-1][0] - res[0][-2][0]
+        print('x_new')
+        print(x_new[0])
+
+        print('prediction y')
+        print(res[0])
+
+        y_gap = res[0][0]
         logger.debug('prediction: %f' % y_gap)
 
         if not stock.count and y_gap > threshold:
@@ -707,7 +724,7 @@ class MLAlgorithm(TradeAlgorithm):
 
         if stock.count and y_gap < -threshold:
             logger.debug('sell')
-            return -stock.count
+            return sell_all(stock)
 
         return 0
 
@@ -723,7 +740,7 @@ class DayTradeAlgorithm(TradeAlgorithm):
     name = 'DayTrade'
 
     def trade_decision(self, stock):
-        in_rate = daytrade_variables[stock.stance]['in_rate']
+        in_rate = daytrade_variables[stock.stance]['in_rate'][0]
 
         logger.debug('evaluating: ' + stock.symbol)
 
