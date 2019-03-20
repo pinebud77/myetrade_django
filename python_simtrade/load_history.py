@@ -14,11 +14,11 @@ DATA_PATH = dirname(realpath(__file__)) + '/market_history'
 
 
 def get_symbol_list():
-    result = list()
-    for file in os.listdir(DATA_PATH):
-        spl = file.split('.')
-        if spl[1] == 'csv':
-            result.append(spl[0])
+    stocks = Stock.objects.all()
+
+    result = []
+    for stock in stocks:
+        result.append(stock.symbol)
 
     return result
 
