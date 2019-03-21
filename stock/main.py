@@ -24,7 +24,7 @@ except ImportError:
     pass
 
 logger = logging.getLogger('main_loop')
-MIN_HISTORY_DAYS = 30
+MIN_HISTORY_DAYS = 120
 
 
 def load_db_account(db_account, account):

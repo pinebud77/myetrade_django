@@ -524,10 +524,10 @@ alg_sess = None
 alg_x = None
 alg_outputs = None
 
-n_steps = 19
-n_inputs = 4
-n_neurons = 128
-n_layers = 3
+n_steps = 59
+n_inputs = 2
+n_neurons = 64
+n_layers = 64
 n_outputs = n_inputs
 
 
@@ -539,21 +539,18 @@ def next_batch(sample_list, batch_size, steps):
         start = random.randint(0, len(symbol_list) - steps - 1)
 
         last_open = symbol_list[start + steps - 1][0]
+        last_volume = symbol_list[start + steps - 1][1]
         one_x = list()
         for day_num in range(start, start + steps):
             day_list = symbol_list[day_num]
             one_x.append((day_list[0] / last_open - 1,
-                          day_list[1] / last_open - 1,
-                          day_list[2] / last_open - 1,
-                          day_list[3] / last_open - 1,))
+                          day_list[1] - last_volume,))
 
         x_list.append(one_x)
 
         day_list = symbol_list[start + steps]
         y_list.append((day_list[0] / last_open - 1,
-                       day_list[1] / last_open - 1,
-                       day_list[2] / last_open - 1,
-                       day_list[3] / last_open - 1,))
+                       day_list[1] - last_volume,))
 
     x_list = np.array(x_list)
     y_list = np.array(y_list)
@@ -572,8 +569,8 @@ def tf_learn(start_date, end_date):
 
     global n_steps, n_inputs, n_neurons, n_outputs
 
-    learning_rate = 0.0002
-    n_iterations = 5000
+    learning_rate = 0.001
+    n_iterations = 2000
     batch_size = 50
 
     tf.reset_default_graph()
@@ -581,9 +578,7 @@ def tf_learn(start_date, end_date):
     x = tf.placeholder(tf.float32, [None, n_steps, n_inputs], 'x')
     y = tf.placeholder(tf.float32, [None, n_outputs], 'y')
 
-    #layers = [tf.contrib.rnn.BasicRNNCell(num_units=n_neurons, activation=tf.nn.elu)
-    #          for _ in range(n_layers)]
-    layers = [tf.contrib.rnn.BasicLSTMCell(num_units=n_neurons, activation=tf.nn.elu)
+    layers = [tf.contrib.rnn.BasicRNNCell(num_units=n_neurons, activation=tf.nn.elu)
               for _ in range(n_layers)]
     multi_layer_cell = tf.contrib.rnn.MultiRNNCell(layers)
     outputs, states = tf.nn.dynamic_rnn(multi_layer_cell, x, dtype=tf.float32)
@@ -593,8 +588,7 @@ def tf_learn(start_date, end_date):
     outputs = tf.reshape(stacked_outputs, [-1, n_steps, n_outputs])
     outputs = outputs[:, n_steps-1, :]
 
-    #weights = tf.constant([[0.9, 0.04, 0.03, 0.03]])
-    weights = tf.constant([[1.0, 0, 0, 0]])
+    weights = tf.constant([[1.0, 0]])
     loss = tf.losses.mean_squared_error(outputs, y, weights=weights)
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     training_op = optimizer.minimize(loss)
@@ -612,7 +606,7 @@ def tf_learn(start_date, end_date):
                                                          date__lte=end_date).order_by('date')
         symbol_list = list()
         for today in sim_histories:
-            today_list = (today.open, today.close, today.high, today.low, )
+            today_list = (today.open, today.volume,)
             symbol_list.append(today_list)
 
         if len(symbol_list) < n_steps + 1:
@@ -628,10 +622,10 @@ def tf_learn(start_date, end_date):
 
         sess.run(training_op, feed_dict={x: x_batch, y: y_batch})
         if iteration % 100 == 0:
-            print('x_batch[0]')
-            print(x_batch[0])
-            print('y_batch[0]')
-            print(y_batch[0])
+            #print('x_batch[0]')
+            #print(x_batch[0])
+            #print('y_batch[0]')
+            #print(y_batch[0])
             mse = loss.eval(feed_dict={x: x_batch, y: y_batch}, session=sess)
             print('%d\tMSE:%f' % (iteration, mse))
 
@@ -647,9 +641,9 @@ def tf_learn(start_date, end_date):
 
 
 ml_variables = (
-    {'threshold': 0.006},      # conservative
-    {'threshold': 0.004},      # moderate
-    {'threshold': 0.002},      # aggressive
+    {'threshold': 0.015},      # conservative
+    {'threshold': 0.010},      # moderate
+    {'threshold': 0.005},      # aggressive
 )
 
 
@@ -667,13 +661,13 @@ class MLAlgorithm(TradeAlgorithm):
 
         if len(histories) < n_steps:
             logger.error('no history')
-            return 0
+            return sell_all(stock)
 
         threshold = ml_variables[stock.stance]['threshold']
 
         x_list = list()
         for today in histories:
-            x_list.append((today.open, today.close, today.high, today.low,))
+            x_list.append((today.open, today.volume,))
 
         global n_inputs, n_neurons
         global alg_x, alg_outputs, alg_sess
@@ -682,9 +676,7 @@ class MLAlgorithm(TradeAlgorithm):
             tf.reset_default_graph()
             alg_x = tf.placeholder(tf.float32, [None, n_steps, n_inputs], 'x')
 
-            #layers = [tf.contrib.rnn.BasicRNNCell(num_units=n_neurons, activation=tf.nn.elu)
-            #          for _ in range(n_layers)]
-            layers = [tf.contrib.rnn.BasicLSTMCell(num_units=n_neurons, activation=tf.nn.elu)
+            layers = [tf.contrib.rnn.BasicRNNCell(num_units=n_neurons, activation=tf.nn.elu)
                       for _ in range(n_layers)]
             multi_layer_cell = tf.contrib.rnn.MultiRNNCell(layers)
             outputs, states = tf.nn.dynamic_rnn(multi_layer_cell, alg_x, dtype=tf.float32)
@@ -702,18 +694,22 @@ class MLAlgorithm(TradeAlgorithm):
             saver.restore(alg_sess, TF_STORE_FILE)
 
         x_new = np.array(x_list)
-        x_new /= x_new[0][0]
-        x_new = x_new - 1
+
+        last_open = x_new[0][0]
+        last_volume = x_new[0][1]
+
+        x_new[:][0] /= last_open
+        x_new[:][0] -= 1
+        x_new[:][1] -= last_volume
         x_new = np.flip(x_new, 0)
 
         x_new = x_new.reshape(-1, n_steps, n_inputs)
         res = alg_sess.run(alg_outputs, feed_dict={alg_x: x_new})
 
-        print('x_new')
-        print(x_new[0])
-
-        print('prediction y')
-        print(res[0])
+        #print('x_new')
+        #print(x_new[0])
+        #print('prediction y')
+        #print(res[0])
 
         y_gap = res[0][0]
         logger.debug('prediction: %f' % y_gap)
