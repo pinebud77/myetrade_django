@@ -526,8 +526,8 @@ alg_outputs = None
 
 n_steps = 59
 n_inputs = 2
-n_neurons = 64
-n_layers = 64
+n_neurons = 32
+n_layers = 32
 n_outputs = n_inputs
 
 
