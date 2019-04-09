@@ -524,10 +524,10 @@ alg_sess = None
 alg_x = None
 alg_outputs = None
 
-n_steps = 59
+n_steps = 29
 n_inputs = 2
 n_neurons = 32
-n_layers = 32
+n_layers = 64
 n_outputs = n_inputs
 
 
@@ -570,7 +570,7 @@ def tf_learn(start_date, end_date):
     global n_steps, n_inputs, n_neurons, n_outputs
 
     learning_rate = 0.001
-    n_iterations = 2000
+    n_epochs = 100
     batch_size = 50
 
     tf.reset_default_graph()
@@ -617,7 +617,10 @@ def tf_learn(start_date, end_date):
 
     sample_list = np.array(sample_list)
 
-    for iteration in range(n_iterations):
+    num_iterations = int(n_epochs * len(sample_list[0]) / batch_size)
+    print("num_iterations=%d" % num_iterations)
+
+    for iteration in range(num_iterations):
         x_batch, y_batch = next_batch(sample_list, batch_size, n_steps)
 
         sess.run(training_op, feed_dict={x: x_batch, y: y_batch})
@@ -758,9 +761,9 @@ class DayTradeAlgorithm(TradeAlgorithm):
 
 AHNYUNG_DAYS = 10
 ahnyung_variables = (
-    {'in_rate': 0.980, 'out_rate': 1.020},    # conservative
-    {'in_rate': 0.990, 'out_rate': 1.010},    # moderate
-    {'in_rate': 0.995, 'out_rate': 1.005},    # aggressive
+    {'in_rate': 0.970, 'out_rate': 1.030},    # conservative
+    {'in_rate': 0.980, 'out_rate': 1.020},    # moderate
+    {'in_rate': 0.990, 'out_rate': 1.010},    # aggressive
 )
 
 
