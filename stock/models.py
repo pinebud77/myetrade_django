@@ -1,15 +1,7 @@
 from django.db import models
 from .algorithms import algorithm_list
 
-try:
-    from .private_algorithms import private_algorithm_list, ACTION_BUY, ACTION_SELL, ACTION_BUY_FAIL, ACTION_SELL_FAIL
-except ImportError:
-    private_algorithm_list = None
-    ACTION_BUY = 0
-    ACTION_SELL = 1
-    ACTION_BUY_FAIL = 2
-    ACTION_SELL_FAIL = 3
-
+from .private_algorithms import private_algorithm_list
 
 class Quote(models.Model):
     class Meta:

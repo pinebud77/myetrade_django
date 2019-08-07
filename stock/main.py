@@ -12,11 +12,12 @@ from django.utils import timezone
 from django.db import transaction
 from .algorithms import algorithm_list
 
+from .private_algorithms import private_algorithm_list
+
 try:
-    from .private_algorithms import private_algorithm_list, tf_learn
+    from .private_algorithms import tf_learn
 except ImportError:
     tf_learn = None
-    private_algorithm_list = None
 
 try:
     from .config import *
@@ -197,7 +198,7 @@ def run(dt=None, client=None):
                 continue
 
             logger.debug('run algorithm: %s' % alg.__class__.name)
-            decision = alg.trade_decision(stock)
+            decision = alg.trade_decision(stock, dt)
             logger.info('%s: decision=%d' % (stock.symbol, decision))
 
             if decision != 0:

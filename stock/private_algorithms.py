@@ -3,6 +3,7 @@
 import logging
 import random
 from . import models
+from datetime import timedelta
 from os.path import join, dirname, realpath
 from .algorithms import TradeAlgorithm, buy_all, sell_all
 
@@ -15,18 +16,11 @@ except ImportError:
     no_tf = True
 
 
-ACTION_BUY = 0
-ACTION_SELL = 1
-ACTION_BUY_FAIL = 2
-ACTION_SELL_FAIL = 3
-
-
 logger = logging.getLogger('algorithms')
 TF_STORE_FILE = join(dirname(realpath(__file__)), 'tf_model')
 
 
 private_algorithm_list = []
-
 
 DIRECTION_UP = 0
 DIRECTION_DOWN = 1
@@ -779,7 +773,7 @@ class AhnyungAlgorithm(TradeAlgorithm):
         try:
             prev_order = models.Order.objects.filter(symbol=stock.symbol,
                                                      account_id=stock.account.id,
-                                                     action=ACTION_BUY).order_by('-dt')[0]
+                                                     action=models.ACTION_BUY).order_by('-dt')[0]
             prev_buy = prev_order.price
         except IndexError:
             logger.debug('no previous order')
@@ -815,14 +809,79 @@ class AhnyungAlgorithm(TradeAlgorithm):
         return 0
 
 
+lt_ahnyung_variables = (
+    {'in_rate': 0.93, 'pout_rate': 1.20, 'days': 10},     #conservertive
+    {'in_rate': 0.95, 'pout_rate': 1.15, 'days': 5},      #moderate
+    {'in_rate': 0.98, 'pout_rate': 1.10, 'days': 3},      #aggressive
+)
+
+class LTAhnyungAlgorithm(TradeAlgorithm):
+    name = "LTAhnyung"
+
+    def trade_decision(self, stock, time_now):
+        in_rate = lt_ahnyung_variables[stock.stance]['in_rate']
+        pout_rate = lt_ahnyung_variables[stock.stance]['pout_rate']
+        days = lt_ahnyung_variables[stock.stance]['days']
+
+        logger.debug('evaluating: ' + stock.symbol)
+
+        histories = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')
+        if len(histories) < days:
+            logger.debug('not enough data')
+            return 0
+        histories = histories[:days]
+
+        try:
+            buy = models.Order.objects.filter(symbol=stock.symbol,
+                                                   account_id=stock.account.id,
+                                                   action=models.ACTION_BUY).order_by('-dt')[0]
+            buy_price = buy.price
+        except IndexError:
+            logger.debug('no previous buy order')
+            buy_price = stock.value
+
+        try:
+            prev_sell = models.Order.objects.filter(symbol=stock.symbol,
+                                                   account_id=stock.account.id,
+                                                   action=models.ACTION_SELL).order_by('-dt')[0]
+            if prev_sell.dt + timedelta(days=days) > time_now:
+                hold_buy = True
+            else:
+                hold_buy = False
+        except IndexError:
+            logger.debug('no previous sell order')
+            hold_buy = False
+
+        if stock.count:
+            if histories[0].open > histories[days-1].open:
+                return 0
+
+            if buy_price * pout_rate < stock.value:
+                logger.debug('sell all')
+                return sell_all(stock)
+            
+            return 0
+        
+        if hold_buy:
+            return 0
+        
+        for history in histories:
+            if history.open * in_rate > stock.value:
+                logger.debug('buy')
+                return buy_all(stock)
+        
+        return 0
+
+
 private_algorithm_list.append(DTTTAlgorithm)
 private_algorithm_list.append(TrendTrendAlgorithm)
 private_algorithm_list.append(OpenCloseAlgorithm)
-private_algorithm_list.append(OCTrendAlgorithm)
-private_algorithm_list.append(DayTrendAlgorithm)
-private_algorithm_list.append(AggDTAlgorithm)
-private_algorithm_list.append(AggTwoAlgorithm)
+#private_algorithm_list.append(OCTrendAlgorithm)
+#private_algorithm_list.append(DayTrendAlgorithm)
+#private_algorithm_list.append(AggDTAlgorithm)
+#private_algorithm_list.append(AggTwoAlgorithm)
 private_algorithm_list.append(RAvgAlgorithm)
-private_algorithm_list.append(MLAlgorithm)
-private_algorithm_list.append(DayTradeAlgorithm)
+#private_algorithm_list.append(MLAlgorithm)
+#private_algorithm_list.append(DayTradeAlgorithm)
 private_algorithm_list.append(AhnyungAlgorithm)
+private_algorithm_list.append(LTAhnyungAlgorithm)

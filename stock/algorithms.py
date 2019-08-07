@@ -33,7 +33,7 @@ def sell_all(stock):
 class TradeAlgorithm:
     name = None
 
-    def trade_decision(self, stock):
+    def trade_decision(self, stock, time_now=None):
         return 0
 
 
