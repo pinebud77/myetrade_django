@@ -10,8 +10,7 @@ from .forms import *
 from .models import *
 from django.contrib.auth import authenticate, login, logout
 from django.template import loader, Context
-from django.shortcuts import render_to_response, redirect
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
@@ -160,9 +159,9 @@ def login_page(request):
 
         user = authenticate(username=username, password=password)
         if not user:
-            return render_to_response('stock/nouser.html')
+            return render('stock/nouser.html')
         if not user.is_active:
-            return render_to_response('stock/inact_user.html')
+            return render('stock/inact_user.html')
 
         login(request, user)
 
