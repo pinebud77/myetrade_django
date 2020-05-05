@@ -1,4 +1,3 @@
-config.py
 myetrade.sqlite3
 myetrade.sqlite3-journal
 .idea
@@ -10,3 +9,4 @@ stock/trend_alg_config.pickle
 stock/migrations
 python_simtrade/sim_config.json
 python_coinbase
+.vscode
