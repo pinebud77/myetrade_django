@@ -7,22 +7,19 @@ import urllib
 import holidays
 import python_etrade.client as etclient
 import python_simtrade.client as simclient
+import python_coinbase.client as coinbase_client
+
 from . import models
 from django.utils import timezone
 from django.db import transaction
 from .algorithms import algorithm_list
-
 from .private_algorithms import private_algorithm_list
+from django.conf import settings
 
 try:
     from .private_algorithms import tf_learn
 except ImportError:
     tf_learn = None
-
-try:
-    from .config import *
-except ImportError:
-    pass
 
 logger = logging.getLogger('main_loop')
 MIN_HISTORY_DAYS = 120
@@ -132,7 +129,11 @@ def get_order_id():
 
 
 def store_order_id(order_id):
-    order_id_obj = models.OrderID.objects.all()[0]
+    try:
+        order_id_obj = models.OrderID.objects.all()[0]
+    except IndexError:
+        order_id_obj = models.OrderID()
+
     order_id_obj.order_id = order_id
     order_id_obj.save()
 
@@ -152,31 +153,50 @@ def get_algorithm(num):
 def run(dt=None, client=None):
     if dt is None:
         dt = timezone.now()
-
+    
+    float_trade = False
+    first = True
     need_logout = False
-    if client is None:
-        if etrade_consumer_key is None:
-            logger.error('no key defined')
-            return False
-        client = etclient.Client()
-        result = client.login(etrade_consumer_key,
-                              etrade_consumer_secret,
-                              etrade_username,
-                              etrade_passwd)
-        if not result:
-            logger.error('login failed')
-            return False
-        logger.debug('logged in')
-        need_logout = True
-
-    store_quotes(client, dt)
-    order_id = get_order_id()
+    orig_client = client
+    order_id = 0
 
     for db_account in models.Account.objects.all():
+        if not orig_client:
+            if client:
+                client.logout()
+
+            if db_account.account_type == models.ACCOUNT_ETRADE:
+                client = etclient.Client()
+                result = client.login(
+                    getattr(settings, 'ETRADE_KEY', ''),
+                    getattr(settings, 'ETRADE_SECRET', ''),
+                    getattr(settings, 'ETRADE_USERNAME', ''),
+                    getattr(settings, 'ETRADE_PASSWORD', ''))
+
+                if first:
+                    store_quotes(client, dt)
+                    order_id = get_order_id()
+                    first = False
+
+            elif db_account.account_type == models.ACCOUNT_COINBASE:
+                client = coinbase_client.Client()
+                result = client.login(
+                    getattr(settings, 'COINBASE_KEY', ''),
+                    getattr(settings, 'COINBASE_SECRET', '')
+                    )
+                float_trade = True
+
+            if not result:
+                logger.error('login failed')
+                return False
+            logger.debug('logged in')
+            need_logout = True
+
         account = client.get_account(db_account.account_id)
         if account is None:
             logger.error('getting account failed: wrong account_id?')
             continue
+
         load_db_account(db_account, account)
 
         logger.debug('account id:%d mode: %s' % (account.id, account.mode))
@@ -198,8 +218,11 @@ def run(dt=None, client=None):
                 continue
 
             logger.debug('run algorithm: %s' % alg.__class__.name)
-            decision = alg.trade_decision(stock, dt)
+            decision = alg.trade_decision(stock)
             logger.info('%s: decision=%d' % (stock.symbol, decision))
+
+            if not float_trade:
+                decision = int(decision)
 
             if decision != 0:
                 stock.last_count = stock.count

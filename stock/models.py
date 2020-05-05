@@ -52,7 +52,15 @@ class SimHistory(models.Model):
                   self.open, self.high, self.low, self.close, self.volume)
 
 
+ACCOUNT_ETRADE = 0
+ACCOUNT_COINBASE = 1
+ACCOUNT_CHOICE = (
+    (ACCOUNT_ETRADE, 'E*TRADE'),
+    (ACCOUNT_COINBASE, 'Coinbase'),
+)
+
 class Account(models.Model):
+    account_type = models.IntegerField(choices=ACCOUNT_CHOICE)
     account_id = models.IntegerField(primary_key=True)
     net_value = models.FloatField(null=True, blank=True)
     cash_to_trade = models.FloatField(null=True, blank=True)
@@ -118,11 +126,11 @@ class Stock(models.Model):
     share = models.FloatField('budget rate in the account')
     algorithm = models.IntegerField(choices=alg_choice)
     stance = models.IntegerField(choices=STANCE_CHOICE)
-    count = models.IntegerField(null=True, default=0, blank=True)
+    count = models.FloatField(null=True, default=0, blank=True)
     last_count = models.FloatField(null=True, blank=True)
 
     def __str__(self):
-        return '%d: %s - count %d' % (self.account.account_id, self.symbol, self.count)
+        return '%s - count %f' % (self.symbol, self.count)
 
 
 class FailureReason(models.Model):
@@ -152,7 +160,7 @@ class Order(models.Model):
     symbol = models.CharField(max_length=10)
     dt = models.DateTimeField('order date')
     price = models.FloatField()
-    count = models.IntegerField()
+    count = models.FloatField()
     action = models.IntegerField(choices=ACTION_CHOICE)
     failure_reason = models.ForeignKey(FailureReason, on_delete=models.CASCADE)
 

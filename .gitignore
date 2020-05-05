@@ -9,3 +9,4 @@ myetrade_django/settings.py
 stock/trend_alg_config.pickle
 stock/migrations
 python_simtrade/sim_config.json
+python_coinbase

@@ -23,7 +23,7 @@ def buy_all(stock):
     if budget > stock.budget:
         budget = stock.budget
 
-    return int(budget / stock.value)
+    return budget / stock.value
 
 
 def sell_all(stock):
@@ -43,62 +43,6 @@ trend_variables = [
     {'up_count': 2, 'down_count': 2, 'pause_count': 3},  # aggressive
 ]
 MIN_HISTORY = 10
-
-
-class TrendAlgorithm(TradeAlgorithm):
-    name = 'Trend'
-
-    def trade_decision(self, stock):
-        try:
-            pause_dict = pickle.load(open(TREND_CONFIG, 'rb'))
-        except FileNotFoundError:
-            pause_dict = {}
-
-        up_count = trend_variables[stock.stance]['up_count']
-        down_count = trend_variables[stock.stance]['down_count']
-        pause_count = trend_variables[stock.stance]['pause_count']
-
-        histories = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')[:MIN_HISTORY]
-        if len(histories) < MIN_HISTORY:
-            logger.info('wait until enough history is there')
-            return 0
-
-        keep_up = 0
-        for n in range(MIN_HISTORY - 1):
-            if histories[n].close < histories[n+1].close:
-                break
-            keep_up += 1
-        keep_down = 0
-        for n in range(MIN_HISTORY - 1):
-            if histories[n].close > histories[n+1].close:
-                break
-            keep_down += 1
-        logger.debug('%s: keep_up %d keep_down %d' % (stock.symbol, keep_up, keep_down))
-
-        if keep_down >= pause_count:
-            pause_dict[stock.symbol] = pause_count
-            pickle.dump(pause_dict, open(TREND_CONFIG, 'wb'))
-            logger.debug('%s: put in pause_dict' % stock.symbol)
-            return -stock.count
-
-        if not stock.count:
-            if stock.symbol in pause_dict:
-                logger.debug('%s: in pause_dict %d remain' % (stock.symbol, pause_dict[stock.symbol] - 1))
-                pause_dict[stock.symbol] -= 1
-                if pause_dict[stock.symbol] == 0:
-                    del pause_dict[stock.symbol]
-                pickle.dump(pause_dict, open(TREND_CONFIG, 'wb'))
-                return 0
-            if keep_up >= up_count:
-                logger.debug('position: buy')
-                return buy_all(stock)
-            return 0
-
-        if keep_down >= down_count:
-            logger.debug('position: sell')
-            return -stock.count
-
-        return 0
 
 
 class MonkeyAlgorithm(TradeAlgorithm):
@@ -131,7 +75,7 @@ class FillAlgorithm(TradeAlgorithm):
         logger.debug('fill: total_value - %f' % total_value)
         logger.debug('fill: overflow - %f' % overflow)
 
-        return -int(overflow / stock.value)
+        return -overflow / stock.value
 
 
 class EmptyAlgorithm(TradeAlgorithm):
@@ -152,5 +96,4 @@ algorithm_list.append(FillAlgorithm)
 algorithm_list.append(EmptyAlgorithm)
 algorithm_list.append(HoldAlgorithm)
 algorithm_list.append(MonkeyAlgorithm)
-algorithm_list.append(TrendAlgorithm)
 

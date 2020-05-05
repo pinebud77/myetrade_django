@@ -4,6 +4,7 @@ Django-based MyEtrade
 This is personal test for Django + my trading code. However, this looks like not a good approach at all..
 
 ToDO :
+* add coin trading through coinbase API
 * think more about algorithms now -_-;
 * modify the way the algorithms list is used
 * bugfix : there are plenty of bugs yet.. (too many bugs!!! too many bugs!!)
@@ -14,7 +15,7 @@ Done :
 * graph and report generation
 
 Installation :
-1. Required libraries(not clear now) : django requests requests_oauth holidays fake_useragent matplotlib mpld3 requests_oauthlib jinja2 (tensorflow)
+1. Required libraries(not clear now) : django requests requests_oauth holidays fake_useragent matplotlib mpld3 requests_oauthlib jinja2 coinbase (tensorflow)
 1. generate your own /myetrade_django/settings.py : you can refer setting.py.sample
 1. $ cd myetrade_django
 1. $ git clone https://github.com/pinebud77/python_etrade.git
