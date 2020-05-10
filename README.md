@@ -2,7 +2,7 @@ Django-based MyEtrade
 =====================
 
 This is personal test for Django + my trading code. However, this looks like not a good approach at all..<br>
-There is no gurantee on your data and integrity. If you try this it is on your own risk
+There is no gurantee on your data and integrity. If you try this, it is on your own risk
 
 ToDO :
 * think more about algorithms now -_-;
