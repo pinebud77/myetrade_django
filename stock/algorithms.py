@@ -106,7 +106,7 @@ out_algorithm_list.append(HoldAlgorithm)
 
 
 up_variables = (
-    {'consecutive_up': 5},
+    {'consecutive_up': 5},      #conservative
     {'consecutive_up': 3},
     {'consecutive_up': 2},
 )
@@ -138,9 +138,9 @@ in_algorithm_list.append(UpAlgorithm)
 
 
 ahnyung_variable = (
-    {'out_rate': 1.100},
-    {'out_rate': 1.050},
-    {'out_rate': 1.030},
+    {'out_rate': 1.200, 'emergency_rate': 0.6},        #conservative
+    {'out_rate': 1.100, 'emergency_rate': 0.7},
+    {'out_rate': 1.030, 'emergency_rate': 0.8},
 )
 
 class AhnyungAlgorithm(TradeAlgorithm):
@@ -151,6 +151,7 @@ class AhnyungAlgorithm(TradeAlgorithm):
             return 0
 
         out_rate = ahnyung_variable[stock.out_stance]['out_rate']
+        emergency_rate = ahnyung_variable[stock.out_stance]['emergency_rate']
 
         logger.debug('evaluating: %s' % stock.symbol)
 
@@ -163,9 +164,12 @@ class AhnyungAlgorithm(TradeAlgorithm):
             logger.info('there is no order information yet')
             return 0
 
-        print(stock.value)
+        print('value=%f, prev_buy=%f' % (stock.value, order.price))
 
-        if order.price < (stock.value * out_rate):
+        if (order.price * out_rate) < stock.value:
+            return sell_all(stock)
+
+        if (order.price * emergency_rate) > stock.value:
             return sell_all(stock)
 
         return 0
