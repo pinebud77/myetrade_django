@@ -237,29 +237,13 @@ def run_page(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
 
+    main.load_history(timezone.now().date())
+
     result = main.run()
-
     if result:
         return render(request, 'stock/success.txt', {})
     else:
         return render(request, 'stock/error.txt', {})
-
-
-@csrf_exempt
-def get_history_page(request):
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-
-    result = main.load_history_wsj(timezone.now().date())
-
-    if result:
-        return render(request, 'stock/success.txt', {})
-    else:
-        return render(request, 'stock/error.txt', {})
-
 
 def simulate_page(request):
     if not request.user.is_authenticated:

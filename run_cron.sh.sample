@@ -11,5 +11,4 @@ fi
 
 echo "non-holiday"
 cd ${DJANGO_BASE}/logs
-wget --timeout=1000 --no-check-certificate -O get_history.log https://${your_server_address}/stock/get_history
 wget --timeout=1000 --no-check-certificate -O run.log https://${your_server_address}/stock/run

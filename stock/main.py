@@ -153,7 +153,7 @@ def get_algorithm(num):
 def run(dt=None, client=None):
     if dt is None:
         dt = timezone.now()
-    
+
     float_trade = False
     first = True
     need_logout = False
@@ -342,8 +342,80 @@ def load_history_sim(cur_date):
             day_history.volume = sim_history.volume
             day_history.save()
 
+def load_stock_symbol(symbol, today):
+    td = timezone.timedelta(MIN_HISTORY_DAYS)
+    start_date = today - td
 
-def load_history_wsj(today):
+    today_histories = models.DayHistory.objects.filter(symbol=symbol, date=today)
+    if today_histories:
+        return
+
+    url = 'http://quotes.wsj.com/%s/historical-prices/download?MOD_VIEW=page&' \
+            'num_rows=100&range_days=100&endDate=%2.2d/%2.2d/%4.4d&' \
+            'startDate=%2.2d/%2.2d/%4.4d' \
+            % (symbol, today.month, today.day, today.year, start_date.month, start_date.day, start_date.year)
+    page = urllib.request.urlopen(url)
+    reader = csv.reader(io.TextIOWrapper(page))
+
+    for row in reader:
+        if row[0] == 'Date':
+            continue
+        dates = row[0].split('/')
+        t_dt = timezone.datetime(year=int(dates[2])+2000, month=int(dates[0]), day=int(dates[1]))
+
+        t_histories = models.DayHistory.objects.filter(symbol=symbol, date=t_dt.date())
+        if t_histories:
+            break
+
+        day_history = models.DayHistory()
+        day_history.symbol = symbol
+        day_history.date = t_dt.date()
+        day_history.open = float(row[1])
+        day_history.high = float(row[2])
+        day_history.low = float(row[3])
+        day_history.close = float(row[4])
+        day_history.volume = int(row[5])
+        day_history.save()
+
+    return True
+
+
+def load_coin_symbol(symbol, today):
+    today_histories = models.DayHistory.objects.filter(symbol=symbol, date=today)
+    if today_histories:
+        return
+
+    url = 'https://www.cryptodatadownload.com/cdd/Coinbase_BTCUSD_d.csv'
+    page = urllib.request.urlopen(url)
+    reader = csv.reader(io.TextIOWrapper(page))
+
+    for row in reader:
+        if 'Created' in row[0]:
+            continue
+        if 'Date' in row[0]:
+            continue
+
+        d_digit = row[0].split('-')
+        t_dt = timezone.datetime(year=int(d_digit[0]), month=int(d_digit[1]), day=int(d_digit[2]))
+
+        t_histories = models.DayHistory.objects.filter(symbol=symbol, date=t_dt.date())
+        if t_histories:
+            break
+
+        day_history = models.DayHistory()
+        day_history.symbol = symbol
+        day_history.date = t_dt.date()
+        day_history.open = float(row[2])
+        day_history.high = float(row[3])
+        day_history.low = float(row[4])
+        day_history.close = float(row[5])
+        day_history.volume = float(row[6])
+        day_history.save()
+
+    return True
+
+@transaction.atomic
+def load_history(today):
     symbol_list = []
 
     for stock in models.Stock.objects.all():
@@ -354,44 +426,15 @@ def load_history_wsj(today):
         if today_histories:
             continue
 
-    td = timezone.timedelta(MIN_HISTORY_DAYS)
-    start_date = today - td
 
+    ret = True
     for symbol in symbol_list:
-        today_histories = models.DayHistory.objects.filter(symbol=symbol, date=today)
-        if today_histories:
-            continue
-
-        url = 'http://quotes.wsj.com/%s/historical-prices/download?MOD_VIEW=page&' \
-              'num_rows=100&range_days=100&endDate=%2.2d/%2.2d/%4.4d&' \
-              'startDate=%2.2d/%2.2d/%4.4d' \
-              % (symbol, today.month, today.day, today.year, start_date.month, start_date.day, start_date.year)
-        page = urllib.request.urlopen(url)
-        reader = csv.reader(io.TextIOWrapper(page))
-
-        for row in reader:
-            print(row)
-            if row[0] == 'Date':
-                continue
-            dates = row[0].split('/')
-            t_dt = timezone.datetime(year=int(dates[2])+2000, month=int(dates[0]), day=int(dates[1]))
-
-            t_histories = models.DayHistory.objects.filter(symbol=symbol, date=t_dt.date())
-            if t_histories:
-                break
-
-            day_history = models.DayHistory()
-            day_history.symbol = symbol
-            day_history.date = t_dt.date()
-            day_history.open = float(row[1])
-            day_history.high = float(row[2])
-            day_history.low = float(row[3])
-            day_history.close = float(row[4])
-            day_history.volume = int(row[5])
-            day_history.save()
+        if symbol != 'BTC':
+            ret = load_stock_symbol(symbol, today)
+        else:
+            ret = load_coin_symbol(symbol, today)
 
     return True
-
 
 def learn(start_date, end_date):
     tf_learn(start_date, end_date)

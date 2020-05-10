@@ -14,7 +14,6 @@ urlpatterns = [
     path('simulate/', views.simulate_page),
     path('loaddata/', views.load_data_page),
     path('run/', views.run_page),
-    path('get_history/', views.get_history_page),
     path('logout/', views.logout_page),
     path('login/', views.login_page),
     path('', views.index, name='index'),

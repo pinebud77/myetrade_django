@@ -26,10 +26,10 @@ class DayHistory(models.Model):
     high = models.FloatField()
     low = models.FloatField()
     close = models.FloatField()
-    volume = models.IntegerField()
+    volume = models.FloatField()
 
     def __str__(self):
-        return '%2.2d/%2.2d/%4.4d - %s: open %f high %f low %f close %f volume %d' \
+        return '%2.2d/%2.2d/%4.4d - %s: open %f high %f low %f close %f volume %f' \
                % (self.date.month, self.date.day, self.date.year, self.symbol,
                   self.open, self.high, self.low, self.close, self.volume)
 
