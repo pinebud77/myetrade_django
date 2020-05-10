@@ -100,7 +100,7 @@ def store_quotes(client, dt):
 
     for symbol in symbol_list:
         quote = client.get_quote(symbol)
-        if quote is None:
+        if not quote:
             continue
         prev_quotes = models.Quote.objects.filter(symbol=symbol, dt=dt).order_by('-dt')
         for prev_quote in prev_quotes:
@@ -172,12 +172,6 @@ def run(dt=None, client=None):
                     getattr(settings, 'ETRADE_SECRET', ''),
                     getattr(settings, 'ETRADE_USERNAME', ''),
                     getattr(settings, 'ETRADE_PASSWORD', ''))
-
-                if first:
-                    store_quotes(client, dt)
-                    order_id = get_order_id()
-                    first = False
-
             elif db_account.account_type == models.ACCOUNT_COINBASE:
                 client = coinbase_client.Client()
                 result = client.login(
@@ -185,6 +179,11 @@ def run(dt=None, client=None):
                     getattr(settings, 'COINBASE_SECRET', '')
                     )
                 float_trade = True
+
+            if first:
+                store_quotes(client, dt)
+                order_id = get_order_id()
+                first = False
 
             if not result:
                 logger.error('login failed')
