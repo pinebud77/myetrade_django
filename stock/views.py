@@ -237,9 +237,6 @@ def run_page(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
 
-    if ip != '127.0.0.1':
-        return render(request, 'stock/error.txt', {})
-
     result = main.run()
 
     if result:
@@ -255,9 +252,6 @@ def get_history_page(request):
         ip = x_forwarded_for.split(',')[0]
     else:
         ip = request.META.get('REMOTE_ADDR')
-
-    if ip != '127.0.0.1':
-        return render(request, 'stock/error.txt', {})
 
     result = main.load_history_wsj(timezone.now().date())
 
