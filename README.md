@@ -1,13 +1,12 @@
 Django-based MyEtrade
 =====================
 
-This is personal test for Django + my trading code. However, this looks like not a good approach at all..
+This is personal test for Django + my trading code. However, this looks like not a good approach at all..<br>
+There is no gurantee on your data and integrity. If you try this it is on your own risk
 
 ToDO :
-* stable coin trade
 * think more about algorithms now -_-;
-* modify the way the algorithms list is used
-* bugfix : there are plenty of bugs yet.. (too many bugs!!! too many bugs!!)
+* bugfix : there are plenty of bugs yet.. (too many bugs!!! too many bugs!! don't try this program!!)
 
 Done :
 * running algorithm on real trading or simulation
@@ -16,7 +15,7 @@ Done :
 * add coin trading through coinbase API
 
 Installation :
-1. Required libraries(not clear now) : django requests requests_oauth holidays fake_useragent matplotlib mpld3 requests_oauthlib jinja2 coinbase (tensorflow)
+1. Required libraries : django requests requests_oauth holidays fake_useragent matplotlib mpld3 requests_oauthlib jinja2 coinbase
 1. generate your own /myetrade_django/settings.py : you can refer setting.py.sample
 1. $ cd myetrade_django
 1. $ git clone https://github.com/pinebud77/python_etrade.git
@@ -26,11 +25,22 @@ Installation :
 1. $ python3 manage.py migrate
 1. $ python3 manage.py createsuperuser
 
+Required Variables in settings.py if you want to try coinbase
+* COINBASE_KEY
+* COINBASE_SECRET
+
+Required Variables in settings.py if you want to trid E*TRADE
+* ETRADE_KEY
+* ETRADE_SECRET
+* ETRADE_USERNAME
+* ETRADE_PASSWORD
+
 Setup Account and Stock :
 * http://localhost:8000/admin/stock/account/ -> add account and setup stock information
 * 'BUDGET RATE IN THE ACCOUNT' means the rate of the stock in the account.<br>
 ex) If budget rate is 0.49, and the net value is 1000.0, the budget for the stock is 490.0
-* the total of the BUDGET RATE for each stocks should not be over 1.0
+* the total of the BUDGET RATE for each stocks should not be over 1.0 <br>
+ex) you have to consider the trading fee. so, using total 0.95 of tradable money is recommended
 
 Ingesting Stock History Data :
 1. locate the csv data to stock/market_history/ as file name of symbol.csv : I downloaded this data from WSJ site
@@ -52,6 +62,7 @@ monkey alg : https://docs.google.com/spreadsheets/d/1Qjo-xpnwApTDFgzEqWoiqVfLXRb
 each algs : https://docs.google.com/spreadsheets/d/1mFiiBiKs-IKIHVxng5LP2pLywZSYVNAtqFDZrILjGZ4/edit?usp=sharing (result of over-optimization T\_T)<br>
 2008 economic crisis : https://docs.google.com/spreadsheets/d/10w4W-io3y1asdI8q3UYn6nKVTN0k9Cb68McNK_BTMjk/edit?usp=sharing (-\_-)<br>
 2017 upup!! : https://docs.google.com/spreadsheets/d/1vbSCPOxwddRwa2NMc0Lp8dLhFbGPMEX35jp6e0q4t3M/edit?usp=sharing (-\_-)
+2018-2019 coin : https://docs.google.com/spreadsheets/d/1psDI7E3vNqV-z9qAqHGL73fkA84iFn98z_onY7jTJ_E/edit?usp=sharing (-\_-)
 
 Running the actual daily job :
 * open http://127.0.0.1:8000/stock/run/ on the same host as the server
