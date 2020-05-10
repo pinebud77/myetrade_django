@@ -122,9 +122,9 @@ class UpAlgorithm(TradeAlgorithm):
 
         logger.debug('evaluating: %s' % stock.symbol)
 
-        try:
-            histories = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')[0:consecutive_up]
-        except IndexError:
+        histories = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')[0:consecutive_up]
+
+        if len(histories) < consecutive_up:
             logger.info('not enough history yet')
             return 0
 
@@ -144,7 +144,7 @@ ahnyung_variable = (
 )
 
 class AhnyungAlgorithm(TradeAlgorithm):
-    name = "Anhyung"
+    name = 'Anhyung'
 
     def trade_decision(self, stock):
         if not stock.count:
@@ -176,3 +176,46 @@ class AhnyungAlgorithm(TradeAlgorithm):
 
 out_algorithm_list.append(AhnyungAlgorithm)
 
+
+vertex_variable = (
+    {'period': 5},      #conservative
+    {'period': 4},
+    {'period': 3},
+)
+
+class VertexAlgorithm(TradeAlgorithm):
+    name = 'Vertex'
+
+    def trade_decision(self, stock):
+        if stock.count:
+            period = vertex_variable[stock.out_stance]['period']
+        else:
+            period = vertex_variable[stock.in_stance]['period']
+
+        logger.debug('evaluating: %s' % stock.symbol)
+
+        histories = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')[0:period]
+
+        if len(histories) < period:
+            logger.info('not enough history yet')
+            return 0
+
+        old_rate = 0
+        new_rate = stock.value - histories[0].open
+        for i in range(len(histories) - 1):
+            old_rate += histories[i].open - histories[i+1].open
+
+            if i == len(histories) - 1:
+                continue
+
+            new_rate += histories[i].open - histories[i+1].open
+
+        if stock.count and old_rate > 0  and new_rate < 0:
+            return sell_all(stock)
+        elif not stock.count and old_rate < 0 and new_rate > 0:
+            return buy_all(stock)
+
+        return 0
+
+in_algorithm_list.append(VertexAlgorithm)
+out_algorithm_list.append(VertexAlgorithm)
