@@ -10,7 +10,7 @@ class OrderAdmin(admin.ModelAdmin):
 class StockInline(admin.TabularInline):
     model = Stock
     extra = 1
-    fields = ['symbol', 'share', 'algorithm', 'stance']
+    fields = ['symbol', 'share', 'in_algorithm', 'in_stance', 'out_algorithm', 'out_stance']
     ordering = ('symbol',)
 
 

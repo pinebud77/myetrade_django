@@ -5,7 +5,6 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 import mpld3
 from . import main
-from python_simtrade import load_history
 from .forms import *
 from .models import *
 from django.contrib.auth import authenticate, login, logout
@@ -224,7 +223,7 @@ def load_data_page(request):
     if not request.user.is_authenticated:
         return redirect('/stock/')
 
-    load_history.load_data()
+    main.load_history(simulate=True)
 
     return render(request, 'stock/success.txt', {})
 
@@ -237,7 +236,7 @@ def run_page(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
 
-    main.load_history(timezone.now().date())
+    main.load_history(main.MIN_HISTORY_DAYS)
 
     result = main.run()
     if result:
@@ -251,23 +250,43 @@ def simulate_page(request):
 
     if request.method == 'POST':
         try:
-            algorithm = int(request.POST['algorithm'])
+            in_algorithm = int(request.POST['in_algorithm'])
         except ValueError:
-            algorithm = None
-        if algorithm is not None:
-            logging.info('algorithm %d' % algorithm)
+            in_algorithm = None
+        if in_algorithm is not None:
+            logging.info('in_algorithm %d' % in_algorithm)
             for stock in Stock.objects.all():
-                stock.algorithm = algorithm
+                stock.in_algorithm = in_algorithm
                 stock.save()
 
         try:
-            stance = int(request.POST['stance'])
+            in_stance = int(request.POST['in_stance'])
         except ValueError:
-            stance = None
-        if stance is not None:
-            logging.info('stance %d' % stance)
+            in_stance = None
+        if in_stance is not None:
+            logging.info('in_stance %d' % in_stance)
             for stock in Stock.objects.all():
-                stock.stance = stance
+                stock.in_stance = in_stance
+                stock.save()
+
+        try:
+            out_algorithm = int(request.POST['out_algorithm'])
+        except ValueError:
+            out_algorithm = None
+        if out_algorithm is not None:
+            logging.info('out_algorithm %d' % out_algorithm)
+            for stock in Stock.objects.all():
+                stock.out_algorithm = out_algorithm
+                stock.save()
+
+        try:
+            out_stance = int(request.POST['out_stance'])
+        except ValueError:
+            out_stance = None
+        if out_stance is not None:
+            logging.info('out_stance %d' % out_stance)
+            for stock in Stock.objects.all():
+                stock.out_stance = out_stance
                 stock.save()
 
         start_month = int(request.POST['start_date_month'])
@@ -284,8 +303,11 @@ def simulate_page(request):
 
         form = SimulateForm(initial={'start_date': start_date,
                                      'end_date': end_date,
-                                     'algorithm': algorithm,
-                                     'stance': stance})
+                                     'in_algorithm': in_algorithm,
+                                     'in_stance': in_stance,
+                                     'out_algorithm': out_algorithm,
+                                     'out_stance': out_stance,
+                                     })
         legends, report_list = get_report_list(start_date, end_date)
         fig_html = get_html_fig(legends, report_list)
         report_url = '%4.4d%2.2d%2.2d-%4.4d%2.2d%2.2d' % (start_date.year, start_date.month, start_date.day,

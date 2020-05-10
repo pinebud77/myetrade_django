@@ -1,7 +1,6 @@
 from django.db import models
-from .algorithms import algorithm_list
+from .algorithms import in_algorithm_list, out_algorithm_list
 
-from .private_algorithms import private_algorithm_list
 
 class Quote(models.Model):
     class Meta:
@@ -54,9 +53,11 @@ class SimHistory(models.Model):
 
 ACCOUNT_ETRADE = 0
 ACCOUNT_COINBASE = 1
+ACCOUNT_SIMULATION = 2
 ACCOUNT_CHOICE = (
     (ACCOUNT_ETRADE, 'E*TRADE'),
     (ACCOUNT_COINBASE, 'Coinbase'),
+    (ACCOUNT_SIMULATION, 'Simulation'),
 )
 
 class Account(models.Model):
@@ -100,32 +101,35 @@ STANCE_CHOICE = (
 
 
 def get_alg_choice():
-    alg_choice = []
+    in_alg_choice = []
+    out_alg_choice = []
 
     num = 0
-    for alg in algorithm_list:
-        alg_choice.append((num, alg.name))
+    for alg in in_algorithm_list:
+        in_alg_choice.append((num, alg.name))
         num += 1
 
-    if private_algorithm_list:
-        for alg in private_algorithm_list:
-            alg_choice.append((num, alg.name))
-            num += 1
+    num = 0
+    for alg in out_algorithm_list:
+        out_alg_choice.append((num, alg.name))
+        num += 1
 
-    return alg_choice
+    return in_alg_choice, out_alg_choice
 
 
 class Stock(models.Model):
     class Meta:
         unique_together = (('account', 'symbol'),)
 
-    alg_choice = get_alg_choice()
+    in_alg_choice, out_alg_choice = get_alg_choice()
 
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     symbol = models.CharField(max_length=10)
     share = models.FloatField('budget rate in the account')
-    algorithm = models.IntegerField(choices=alg_choice)
-    stance = models.IntegerField(choices=STANCE_CHOICE)
+    in_algorithm = models.IntegerField(choices=in_alg_choice)
+    in_stance = models.IntegerField(choices=STANCE_CHOICE)
+    out_algorithm = models.IntegerField(choices=out_alg_choice)
+    out_stance = models.IntegerField(choices=STANCE_CHOICE)
     count = models.FloatField(null=True, default=0, blank=True)
     last_count = models.FloatField(null=True, blank=True)
 

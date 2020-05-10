@@ -36,7 +36,7 @@ class SimulateForm(forms.ModelForm):
 
     class Meta:
         model = Stock
-        fields = ['algorithm', 'stance']
+        fields = ['in_algorithm', 'in_stance', 'out_algorithm', 'out_stance']
 
     td = timezone.timedelta(30)
 

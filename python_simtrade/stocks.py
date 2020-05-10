@@ -39,6 +39,10 @@ class Stock:
         self.stance = 0
         self.valid = True
         self.failure_reason = 'success'
+        if symbol == 'BTC':
+            self.float_trade = True
+        else:
+            self.float_trade = False
 
     def update(self, dt):
         quote = Quote(self.symbol)

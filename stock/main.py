@@ -12,14 +12,9 @@ import python_coinbase.client as coinbase_client
 from . import models
 from django.utils import timezone
 from django.db import transaction
-from .algorithms import algorithm_list
-from .private_algorithms import private_algorithm_list
+from .algorithms import in_algorithm_list, out_algorithm_list
 from django.conf import settings
 
-try:
-    from .private_algorithms import tf_learn
-except ImportError:
-    tf_learn = None
 
 logger = logging.getLogger('main_loop')
 MIN_HISTORY_DAYS = 120
@@ -37,8 +32,10 @@ def store_db_account(db_account, account):
 
 def load_db_stock(db_stock, stock):
     stock.budget = stock.account.net_value * db_stock.share
-    stock.algorithm = db_stock.algorithm
-    stock.stance = db_stock.stance
+    stock.in_algorithm = db_stock.in_algorithm
+    stock.in_stance = db_stock.in_stance
+    stock.out_algorithm = db_stock.out_algorithm
+    stock.out_stance = db_stock.out_stance
     stock.last_count = db_stock.last_count
 
     if stock.last_count is None:
@@ -138,13 +135,20 @@ def store_order_id(order_id):
     order_id_obj.save()
 
 
-def get_algorithm(num):
-    if num < len(algorithm_list):
-        return algorithm_list[num]()
+def get_in_algorithm(num):
+    if num < len(in_algorithm_list):
+        return in_algorithm_list[num]()
 
-    num -= len(algorithm_list)
-    if private_algorithm_list and num < len(private_algorithm_list):
-        return private_algorithm_list[num]()
+    print('there is no such in algorithm index %d' % num)
+
+    return None
+
+
+def get_out_algorithm(num):
+    if num < len(out_algorithm_list):
+        return out_algorithm_list[num]()
+
+    print('there is no such out algorithm index %d' % num)
 
     return None
 
@@ -154,7 +158,6 @@ def run(dt=None, client=None):
     if dt is None:
         dt = timezone.now()
 
-    float_trade = False
     first = True
     need_logout = False
     orig_client = client
@@ -178,7 +181,6 @@ def run(dt=None, client=None):
                     getattr(settings, 'COINBASE_KEY', ''),
                     getattr(settings, 'COINBASE_SECRET', '')
                     )
-                float_trade = True
 
             if first:
                 store_quotes(client, dt)
@@ -211,17 +213,22 @@ def run(dt=None, client=None):
 
             load_db_stock(db_stock, stock)
 
-            alg = get_algorithm(stock.algorithm)
-            if not alg:
-                logger.error('there is no such algorithm index: %d' % stock.algorithm)
-                continue
+            if stock.count:
+                alg = get_out_algorithm(stock.out_algorithm)
+                if not alg:
+                    continue
+            else:
+                alg = get_in_algorithm(stock.in_algorithm)
+                if not alg:
+                    continue
 
             logger.debug('run algorithm: %s' % alg.__class__.name)
             decision = alg.trade_decision(stock)
-            logger.info('%s: decision=%d' % (stock.symbol, decision))
 
-            if not float_trade:
+            if not stock.float_trade:
                 decision = int(decision)
+
+            logger.info('%s: decision=%f' % (stock.symbol, decision))
 
             if decision != 0:
                 stock.last_count = stock.count
@@ -341,18 +348,22 @@ def load_history_sim(cur_date):
             day_history.volume = sim_history.volume
             day_history.save()
 
-def load_stock_symbol(symbol, today):
-    td = timezone.timedelta(MIN_HISTORY_DAYS)
-    start_date = today - td
-
+def load_stock_symbol(symbol, today, simulate):
     today_histories = models.DayHistory.objects.filter(symbol=symbol, date=today)
     if today_histories:
         return
 
+    if not simulate:
+        td = timezone.timedelta(MIN_HISTORY_DAYS)
+        start_date = today - td
+    else:
+        start_date = timezone.datetime(year=2002, month=1, day=1)
+
     url = 'http://quotes.wsj.com/%s/historical-prices/download?MOD_VIEW=page&' \
-            'num_rows=100&range_days=100&endDate=%2.2d/%2.2d/%4.4d&' \
-            'startDate=%2.2d/%2.2d/%4.4d' \
-            % (symbol, today.month, today.day, today.year, start_date.month, start_date.day, start_date.year)
+        'num_rows=100&range_days=100&endDate=%2.2d/%2.2d/%4.4d&' \
+        'startDate=%2.2d/%2.2d/%4.4d' \
+        % (symbol, today.month, today.day, today.year, start_date.month, start_date.day, start_date.year)
+
     page = urllib.request.urlopen(url)
     reader = csv.reader(io.TextIOWrapper(page))
 
@@ -362,11 +373,18 @@ def load_stock_symbol(symbol, today):
         dates = row[0].split('/')
         t_dt = timezone.datetime(year=int(dates[2])+2000, month=int(dates[0]), day=int(dates[1]))
 
-        t_histories = models.DayHistory.objects.filter(symbol=symbol, date=t_dt.date())
+        if not simulate:
+            t_histories = models.DayHistory.objects.filter(symbol=symbol, date=t_dt.date())
+        else:
+            t_histories = models.SimHistory.objects.filter(symbol=symbol, date=t_dt.date())
+
         if t_histories:
             break
 
-        day_history = models.DayHistory()
+        if not simulate:
+            day_history = models.DayHistory()
+        else:
+            day_history = models.SimHistory()
         day_history.symbol = symbol
         day_history.date = t_dt.date()
         day_history.open = float(row[1])
@@ -379,7 +397,7 @@ def load_stock_symbol(symbol, today):
     return True
 
 
-def load_coin_symbol(symbol, today):
+def load_coin_symbol(symbol, today, simulate):
     today_histories = models.DayHistory.objects.filter(symbol=symbol, date=today)
     if today_histories:
         return
@@ -397,11 +415,17 @@ def load_coin_symbol(symbol, today):
         d_digit = row[0].split('-')
         t_dt = timezone.datetime(year=int(d_digit[0]), month=int(d_digit[1]), day=int(d_digit[2]))
 
-        t_histories = models.DayHistory.objects.filter(symbol=symbol, date=t_dt.date())
+        if not simulate:
+            t_histories = models.DayHistory.objects.filter(symbol=symbol, date=t_dt.date())
+        else:
+            t_histories = models.SimHistory.objects.filter(symbol=symbol, date=t_dt.date())
         if t_histories:
             break
 
-        day_history = models.DayHistory()
+        if not simulate:
+            day_history = models.DayHistory()
+        else:
+            day_history = models.SimHistory()
         day_history.symbol = symbol
         day_history.date = t_dt.date()
         day_history.open = float(row[2])
@@ -414,7 +438,8 @@ def load_coin_symbol(symbol, today):
     return True
 
 @transaction.atomic
-def load_history(today):
+def load_history(simulate=False):
+    today = timezone.now().date()
     symbol_list = []
 
     for stock in models.Stock.objects.all():
@@ -429,9 +454,9 @@ def load_history(today):
     ret = True
     for symbol in symbol_list:
         if symbol != 'BTC':
-            ret = load_stock_symbol(symbol, today)
+            ret = load_stock_symbol(symbol, today, simulate)
         else:
-            ret = load_coin_symbol(symbol, today)
+            ret = load_coin_symbol(symbol, today, simulate)
 
     return True
 
