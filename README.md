@@ -61,7 +61,7 @@ Getting Performance Report after simulation or running the actual :
 monkey alg : https://docs.google.com/spreadsheets/d/1Qjo-xpnwApTDFgzEqWoiqVfLXRb1B38BnB0JVpfJeEk/edit?usp=sharing (random buy sell)<br>
 each algs : https://docs.google.com/spreadsheets/d/1mFiiBiKs-IKIHVxng5LP2pLywZSYVNAtqFDZrILjGZ4/edit?usp=sharing (result of over-optimization T\_T)<br>
 2008 economic crisis : https://docs.google.com/spreadsheets/d/10w4W-io3y1asdI8q3UYn6nKVTN0k9Cb68McNK_BTMjk/edit?usp=sharing (-\_-)<br>
-2017 upup!! : https://docs.google.com/spreadsheets/d/1vbSCPOxwddRwa2NMc0Lp8dLhFbGPMEX35jp6e0q4t3M/edit?usp=sharing (-\_-)
+2017 upup!! : https://docs.google.com/spreadsheets/d/1vbSCPOxwddRwa2NMc0Lp8dLhFbGPMEX35jp6e0q4t3M/edit?usp=sharing (-\_-)<br>
 2018-2019 coin : https://docs.google.com/spreadsheets/d/1psDI7E3vNqV-z9qAqHGL73fkA84iFn98z_onY7jTJ_E/edit?usp=sharing (-\_-)
 
 Running the actual daily job :
