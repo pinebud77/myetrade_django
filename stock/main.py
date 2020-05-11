@@ -378,11 +378,6 @@ def load_stock_symbol(symbol, today, simulate):
         start='%4.4d-%2.2d-%2.2d' % (start_date.year, start_date.month, start_date.day),
         end='%4.4d-%2.2d-%2.2d' % (today.year, today.month, today.day))
 
-    url = 'http://quotes.wsj.com/%s/historical-prices/download?' \
-        'num_rows=360&range_days=100&endDate=%2.2d/%2.2d/%4.4d&' \
-        'startDate=%2.2d/%2.2d/%4.4d' \
-        % (symbol, today.month, today.day, today.year, start_date.month, start_date.day, start_date.year)
-
     data.sort_index(axis=0, ascending=False, inplace=True)
 
     for index, row in data.iterrows():
