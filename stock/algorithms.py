@@ -219,15 +219,18 @@ class VertexAlgorithm(TradeAlgorithm):
         logger.debug('stock info: %s' % str(stock))
         logger.debug('last day market data: %s' % str(histories[0]))
 
+        weight = 1.0
+        weight_decrease = 0.05
         old_rate = 0
-        new_rate = stock.value - histories[0].open
+        new_rate = (stock.value - histories[0].open) * weight
         for i in range(len(histories) - 1):
-            old_rate += histories[i].open - histories[i+1].open
+            old_rate += (histories[i].open - histories[i+1].open) * weight
 
+            weight -= weight_decrease
             if i == len(histories) - 1:
                 continue
 
-            new_rate += histories[i].open - histories[i+1].open
+            new_rate += (histories[i].open - histories[i+1].open) * weight
 
         if stock.count and old_rate > 0  and new_rate < 0:
             return sell_all(stock)

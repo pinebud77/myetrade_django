@@ -15,7 +15,7 @@ Done :
 * add coin trading through coinbase API
 
 Installation :
-1. Required libraries : django requests requests_oauth holidays fake_useragent matplotlib mpld3 requests_oauthlib jinja2 coinbase
+1. Required libraries : django requests requests_oauth holidays fake_useragent matplotlib mpld3 requests_oauthlib jinja2 coinbase yfinance
 1. generate your own /myetrade_django/settings.py : you can refer setting.py.sample
 1. $ cd myetrade_django
 1. $ git clone https://github.com/pinebud77/python_etrade.git
