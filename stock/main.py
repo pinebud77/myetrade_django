@@ -23,12 +23,14 @@ import holidays
 import python_etrade.client as etclient
 import python_simtrade.client as simclient
 import python_coinbase.client as coinbase_client
+import yfinance as yf
 
 from . import models
 from django.utils import timezone
 from django.db import transaction
 from .algorithms import in_algorithm_list, out_algorithm_list
 from django.conf import settings
+from fake_useragent import UserAgent
 
 
 logger = logging.getLogger('main_loop')
@@ -219,6 +221,12 @@ def run(dt=None, client=None):
 
         trade_failed = False
         for db_stock in models.Stock.objects.filter(account=db_account):
+
+            us_holidays = holidays.UnitedStates()
+            if dt.date() in us_holidays and db_stock.symbol != 'BTC':
+                logger.info('skipping sim: US holiday')
+                continue
+
             stock = account.get_stock(db_stock.symbol)
             if not stock:
                 stock = account.new_stock(db_stock.symbol)
@@ -311,20 +319,11 @@ def simulate(start_date=None, end_date=None):
                                 hour=23, minute=59, second=59, tzinfo=timezone.get_default_timezone())
 
     day_delta = timezone.timedelta(1)
-    us_holidays = holidays.UnitedStates()
 
     simclient.reset_sim_config()
     client = simclient.Client()
     client.login(cur_dt)
     while cur_dt <= last_dt:
-        if cur_dt.weekday() == 5 or cur_dt.weekday() == 6:
-            logger.info('skipping sim: Saturday or Sunday')
-            cur_dt += day_delta
-            continue
-        if cur_dt.date() in us_holidays:
-            logger.info('skipping sim: US holiday')
-            cur_dt += day_delta
-            continue
         logger.info('running sim: ' + str(cur_dt))
         client.update(cur_dt)
         run(dt=cur_dt, client=client)
@@ -369,29 +368,27 @@ def load_stock_symbol(symbol, today, simulate):
         return
 
     if not simulate:
-        td = timezone.timedelta(MIN_HISTORY_DAYS)
+        td = timezone.timedelta(day=MIN_HISTORY_DAYS)
         start_date = today - td
     else:
         start_date = timezone.datetime(year=2002, month=1, day=1)
 
-    url = 'http://quotes.wsj.com/%s/historical-prices/download?MOD_VIEW=page&' \
-        'num_rows=100&range_days=100&endDate=%2.2d/%2.2d/%4.4d&' \
+    data = yf.download(symbol,
+        start='%4.4d-%2.2d-%2.2d' % (start_date.year, start_date.month, start_date.day),
+        end='%4.4d-%2.2d-%2.2d' % (today.year, today.month, today.day))
+
+    url = 'http://quotes.wsj.com/%s/historical-prices/download?' \
+        'num_rows=360&range_days=100&endDate=%2.2d/%2.2d/%4.4d&' \
         'startDate=%2.2d/%2.2d/%4.4d' \
         % (symbol, today.month, today.day, today.year, start_date.month, start_date.day, start_date.year)
 
-    page = urllib.request.urlopen(url)
-    reader = csv.reader(io.TextIOWrapper(page))
+    data.sort_index(axis=0, ascending=False, inplace=True)
 
-    for row in reader:
-        if row[0] == 'Date':
-            continue
-        dates = row[0].split('/')
-        t_dt = timezone.datetime(year=int(dates[2])+2000, month=int(dates[0]), day=int(dates[1]))
-
+    for index, row in data.iterrows():
         if not simulate:
-            t_histories = models.DayHistory.objects.filter(symbol=symbol, date=t_dt.date())
+            t_histories = models.DayHistory.objects.filter(symbol=symbol, date=index.date())
         else:
-            t_histories = models.SimHistory.objects.filter(symbol=symbol, date=t_dt.date())
+            t_histories = models.SimHistory.objects.filter(symbol=symbol, date=index.date())
 
         if t_histories:
             break
@@ -401,12 +398,12 @@ def load_stock_symbol(symbol, today, simulate):
         else:
             day_history = models.SimHistory()
         day_history.symbol = symbol
-        day_history.date = t_dt.date()
-        day_history.open = float(row[1])
-        day_history.high = float(row[2])
-        day_history.low = float(row[3])
-        day_history.close = float(row[4])
-        day_history.volume = int(row[5])
+        day_history.date = index.date()
+        day_history.open = float(row[0])
+        day_history.high = float(row[1])
+        day_history.low = float(row[2])
+        day_history.close = float(row[3])
+        day_history.volume = int(row[4])
         day_history.save()
 
     return True
@@ -457,6 +454,9 @@ def load_history(simulate=False):
     today = timezone.now().date()
     symbol_list = []
 
+    if simulate:
+        models.SimHistory.objects.all().delete()
+
     for stock in models.Stock.objects.all():
         if str(stock.symbol) not in symbol_list:
             symbol_list.append(str(stock.symbol))
@@ -464,7 +464,6 @@ def load_history(simulate=False):
         today_histories = models.DayHistory.objects.filter(symbol=symbol, date=today)
         if today_histories:
             continue
-
 
     ret = True
     for symbol in symbol_list:

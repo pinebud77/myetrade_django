@@ -21,6 +21,7 @@ import logging
 
 
 TRANSACTION_FEE = 6.95
+logger = logging.getLogger('simulation')
 
 
 class Quote:
@@ -33,6 +34,7 @@ class Quote:
         try:
             history = models.SimHistory.objects.filter(symbol=self.symbol, date__lte=cur_time.date()).order_by('-date')[0]
         except IndexError:
+            print('update error')
             return False
         self.ask = history.open
         self.bid = history.open
@@ -61,14 +63,21 @@ class Stock:
         else:
             self.float_trade = False
 
+    def __str__(self):
+        return '%s: account_id %d, count %f, value %f' % (self.symbol,
+            self.account.id,
+            self.count,
+            self.value)
+
     def update(self, dt):
         quote = Quote(self.symbol)
         res = quote.update(dt)
         if not res:
+            logging.debug('failed to update Quote')
             self.valid = False
             return False
         self.value = (quote.ask + quote.bid) / 2
-        logging.debug('\nupdating stock')
+        logging.debug('updating stock')
         logging.debug('stock: %s' % self.symbol)
         logging.debug('ask: %f' % self.value)
 

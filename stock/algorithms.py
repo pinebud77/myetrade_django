@@ -216,6 +216,9 @@ class VertexAlgorithm(TradeAlgorithm):
             logger.info('not enough history yet')
             return 0
 
+        logger.debug('stock info: %s' % str(stock))
+        logger.debug('last day market data: %s' % str(histories[0]))
+
         old_rate = 0
         new_rate = stock.value - histories[0].open
         for i in range(len(histories) - 1):
