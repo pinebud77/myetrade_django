@@ -24,6 +24,7 @@ import python_etrade.client as etclient
 import python_simtrade.client as simclient
 import python_coinbase.client as coinbase_client
 import yfinance as yf
+import ssl
 
 from . import models
 from django.utils import timezone
@@ -413,6 +414,8 @@ def load_coin_symbol(symbol, today, simulate):
     today_histories = models.DayHistory.objects.filter(symbol=symbol, date=today)
     if today_histories:
         return
+
+    ssl._create_default_https_context = ssl._create_unverified_context
 
     url = 'https://www.cryptodatadownload.com/cdd/Coinbase_BTCUSD_d.csv'
     page = urllib.request.urlopen(url)
