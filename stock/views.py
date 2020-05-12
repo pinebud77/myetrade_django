@@ -253,7 +253,7 @@ def run_page(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
 
-    main.load_history(main.MIN_HISTORY_DAYS)
+    main.load_history(simulate=False)
 
     result = main.run()
     if result:
