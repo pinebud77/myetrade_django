@@ -416,6 +416,7 @@ def load_coin_symbol(symbol, today, simulate):
     page = urllib.request.urlopen(url)
     reader = csv.reader(io.TextIOWrapper(page))
 
+    count = 0
     for row in reader:
         if 'Created' in row[0]:
             continue
@@ -447,6 +448,11 @@ def load_coin_symbol(symbol, today, simulate):
         day_history.close = float(row[5])
         day_history.volume = float(row[6])
         day_history.save()
+
+        count += 1
+
+        if not simulate and (count >= MIN_HISTORY_DAYS):
+            break
 
     return True
 
