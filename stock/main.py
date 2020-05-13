@@ -425,6 +425,9 @@ def load_coin_symbol(symbol, today, simulate):
         d_digit = row[0].split('-')
         t_dt = timezone.datetime(year=int(d_digit[0]), month=int(d_digit[1]), day=int(d_digit[2]))
 
+        if timezone.now().date() == t_dt.date():
+            continue
+
         if not simulate:
             t_histories = models.DayHistory.objects.filter(symbol=symbol, date=t_dt.date())
         else:
