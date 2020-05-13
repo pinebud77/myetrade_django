@@ -174,7 +174,7 @@ def get_out_algorithm(num):
 @transaction.atomic
 def run(dt=None, client=None):
     if dt is None:
-        dt = timezone.now()
+        dt = timezone.localtime()
 
     first = True
     need_logout = False
