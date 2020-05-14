@@ -154,9 +154,9 @@ in_algorithm_list.append(UpAlgorithm)
 
 
 ahnyung_variable = (
-    {'out_rate': 1.200, 'emergency_rate': 0.6},        #conservative
-    {'out_rate': 1.100, 'emergency_rate': 0.7},
-    {'out_rate': 1.030, 'emergency_rate': 0.8},
+    {'out_rate': 1.700, 'emergency_rate': 0.6},        #conservative
+    {'out_rate': 1.500, 'emergency_rate': 0.7},
+    {'out_rate': 1.300, 'emergency_rate': 0.8},
 )
 
 class AhnyungAlgorithm(TradeAlgorithm):
@@ -194,9 +194,9 @@ out_algorithm_list.append(AhnyungAlgorithm)
 
 
 vertex_variable = (
-    {'period': 5},      #conservative
-    {'period': 4},
-    {'period': 3},
+    {'period': 17, 'rate': 0.03},      #conservative
+    {'period': 15, 'rate': 0.02},
+    {'period': 12, 'rate': 0.01},
 )
 
 class VertexAlgorithm(TradeAlgorithm):
@@ -205,8 +205,10 @@ class VertexAlgorithm(TradeAlgorithm):
     def trade_decision(self, stock):
         if stock.count:
             period = vertex_variable[stock.out_stance]['period']
+            rate = vertex_variable[stock.out_stance]['rate']
         else:
             period = vertex_variable[stock.in_stance]['period']
+            rate = vertex_variable[stock.in_stance]['rate']
 
         logger.debug('evaluating: %s' % stock.symbol)
 
@@ -219,13 +221,16 @@ class VertexAlgorithm(TradeAlgorithm):
         logger.debug('stock info: %s' % str(stock))
         logger.debug('last day market data: %s' % str(histories[0]))
 
+        total_volume = 0
         new_rate = (stock.value - histories[0].open) * histories[0].volume
+        total_volume += histories[0].volume
         for i in range(len(histories) - 2):
             new_rate += (histories[i].open - histories[i+1].open) * histories[i+1].volume
+            total_volume += histories[i+1].volume
 
-        if stock.count and new_rate < 0:
+        if stock.count and new_rate < (-rate * stock.value * total_volume):
             return sell_all(stock)
-        elif not stock.count and new_rate > 0:
+        elif not stock.count and new_rate > (rate * stock.value * total_volume):
             return buy_all(stock)
 
         return 0
