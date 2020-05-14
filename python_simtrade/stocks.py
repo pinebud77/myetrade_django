@@ -103,7 +103,11 @@ class Stock:
 
         self.count += count
         self.account.cash_to_trade -= count * self.value
-        self.account.cash_to_trade -= TRANSACTION_FEE
+
+        if self.symbol == 'BTC':
+            self.account.cash_to_trade -= self.count * self.value * 0.03
+        else:
+            self.account.cash_to_trade -= TRANSACTION_FEE * (self.count // 100)
 
         logging.debug('trade complete: %s %d' % (self.symbol, count))
 
