@@ -194,7 +194,7 @@ out_algorithm_list.append(AhnyungAlgorithm)
 
 
 vertex_variable = (
-    {'period': 17, 'rate': 0.03},      #conservative
+    {'period': 18, 'rate': 0.03},      #conservative
     {'period': 15, 'rate': 0.02},
     {'period': 12, 'rate': 0.01},
 )
@@ -221,16 +221,16 @@ class VertexAlgorithm(TradeAlgorithm):
         logger.debug('stock info: %s' % str(stock))
         logger.debug('last day market data: %s' % str(histories[0]))
 
-        total_volume = 0
-        new_rate = (stock.value - histories[0].open) * histories[0].volume
-        total_volume += histories[0].volume
+        weight = 1
+        weight_decrease = weight / period
+        new_rate = (stock.value - histories[0].open) * weight
         for i in range(len(histories) - 2):
-            new_rate += (histories[i].open - histories[i+1].open) * histories[i+1].volume
-            total_volume += histories[i+1].volume
+            weight -= weight_decrease
+            new_rate += (histories[i].open - histories[i+1].open) * weight
 
-        if stock.count and new_rate < (-rate * stock.value * total_volume):
+        if stock.count and new_rate < (-rate * stock.value):
             return sell_all(stock)
-        elif not stock.count and new_rate > (rate * stock.value * total_volume):
+        elif not stock.count and new_rate > (rate * stock.value):
             return buy_all(stock)
 
         return 0

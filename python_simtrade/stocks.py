@@ -105,7 +105,7 @@ class Stock:
         self.account.cash_to_trade -= count * self.value
 
         if self.symbol == 'BTC':
-            self.account.cash_to_trade -= self.count * self.value * 0.03
+            self.account.cash_to_trade -= self.count * self.value * 0.015
         else:
             self.account.cash_to_trade -= TRANSACTION_FEE * (self.count // 100)
 
