@@ -237,3 +237,58 @@ class VertexAlgorithm(TradeAlgorithm):
 
 in_algorithm_list.append(VertexAlgorithm)
 out_algorithm_list.append(VertexAlgorithm)
+
+
+range_variable = (
+    {'in_rate': 0.95, 'out_rate': 0.8, 'period': 50},        #conservative
+    {'in_rate': 0.9, 'out_rate': 0.8, 'period': 40},
+    {'in_rate': 0.8, 'out_rate': 0.7, 'period': 30},
+)
+
+class RangeAlgorithm(TradeAlgorithm):
+    name = 'Range'
+
+    def trade_decision(self, stock):
+        logger.debug('evaluatating: %s' % stock.symbol)
+
+        in_rate = range_variable[stock.in_stance]['in_rate']
+        out_rate = range_variable[stock.out_stance]['out_rate']
+        if stock.count:
+            period = range_variable[stock.out_stance]['period']
+        else:
+            period = range_variable[stock.in_stance]['period']
+
+        histories = models.DayHistory.objects.filter(symbol=stock.symbol).order_by('-date')[0:period]
+
+        if len(histories) < period:
+            logger.info('not enough history yet')
+            return 0
+
+        logger.debug('stock info: %s' % str(stock))
+        logger.debug('last day market data: %s' % str(histories[0]))
+
+        period_high = histories[0].high
+        period_low = histories[0].low
+        for history in histories:
+            if history.high > period_high:
+                period_high = history.high
+            if history.low < period_low:
+                period_low = history.low
+
+        period_in = period_low + (period_high - period_low) * in_rate
+        period_out = period_low + (period_high - period_low) * out_rate
+
+        logger.debug('period_in %f' % period_in)
+        logger.debug('period_out %f' % period_out)
+
+        if stock.count:
+            if period_out < stock.value < period_in:
+                return sell_all(stock)
+            return 0
+        else:
+            if stock.value > period_in:
+                return buy_all(stock)
+            return 0
+
+in_algorithm_list.append(RangeAlgorithm)
+out_algorithm_list.append(RangeAlgorithm)
