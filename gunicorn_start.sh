@@ -14,6 +14,7 @@ TIME_OUT=300
 DJANGO_SETTINGS_MODULE=myetrade_django.settings
 DJANGO_WSGI_MODULE=myetrade_django.wsgi
 PIDFILE=${DJANGODIR}/run/gunicorn.pid
+LOGFILE=${DJANGODIR}/logs/myetrade.log
 
 echo "Starting $NAME as `whoami`"
 
@@ -32,4 +33,4 @@ exec /usr/local/bin/gunicorn ${DJANGO_WSGI_MODULE}:application \
 	--log-level=debug \
 	--timeout=$TIME_OUT \
 	--pid=${PIDFILE} \
-	--log-file=-
+	--log-file=${LOGFILE}

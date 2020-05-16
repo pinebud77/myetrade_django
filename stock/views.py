@@ -253,6 +253,9 @@ def run_page(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
 
+    if ip != '127.0.0.1':
+        return render(request, 'stock/error.txt', {})
+
     main.load_history(simulate=False)
 
     result = main.run()
