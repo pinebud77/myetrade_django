@@ -141,3 +141,11 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 STATIC_ROOT = '/home/pi/myetrade_django/static'
+
+COINBASE_KEY = 'dummy'
+COINBASE_SECRET = 'dummy'
+
+ETRADE_KEY = 'dummy'
+ETRADE_SECRET = 'dummy'
+ETRADE_USERNAME = 'dummy'
+ETRADE_PASSWORD = 'dummy'
