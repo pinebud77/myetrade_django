@@ -17,9 +17,11 @@ Done :
 * stocks : trading through E*TRADE API (my private python API)
 
 Installation :
-1. Required libraries : django requests requests_oauth holidays fake_useragent matplotlib mpld3 requests_oauthlib jinja2 coinbase yfinance
-1. generate your own /myetrade_django/settings.py : you can refer setting.py.sample
+1. $ sudo apt install
+1. $ git clone https://github.com/pinebud77/myetrade_django.git
+1. $ sudo pip3 install django requests requests_oauth holidays fake_useragent matplotlib mpld3 requests_oauthlib jinja2 coinbase yfinance
 1. $ cd myetrade_django
+1. generate your own myetrade_django/settings.py : you can refer setting.py.sample
 1. $ git clone https://github.com/pinebud77/python_etrade.git
 1. $ git clone https://github.com/pinebud77/python_coinbase.git
 1. $ python3 manage.py migrate
@@ -67,6 +69,7 @@ Getting Performance Report for the actual run :
 1. example report : monkey is the best !!!<br>
 
 Deploying the server with nginx + gunicorn
+* https://www.digitalocean.com/community/tutorials/how-to-set-up-django-with-postgres-nginx-and-gunicorn-on-ubuntu-16-04
 * https://docs.gunicorn.org/en/stable/deploy.html
 * gunicorn_start.sh was prepared for the gunicorn deployment
 * logrotate may need to be setup on logs directory
